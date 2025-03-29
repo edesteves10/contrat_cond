@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Contrato{% endblock %}
+
+{% block content %}
+  <h1>Editar Contrato</h1>
+
+  <form method="POST">
+    <div class="form-group">
+      <label for="nome">Nome Empresa:</label>
+      <input type="text" class="form-control" id="nome" name="nome" value="{{ contrato.nome }}">
+    </div>
+    <div class="form-group">
+      <label for="cnpj">CNPJ:</label>
+      <input type="text" class="form-control" id="cnpj" name="cnpj" value="{{ contrato.cnpj }}">
+    </div>
+    <div class="form-group">
+      <label for="endereco">Endereço:</label>
+      <input type="text" class="form-control" id="endereco" name="endereco" value="{{ contrato.endereco }}">
+    </div>
+    <div class="form-group">
+      <label for="cep">CEP:</label>
+      <input type="text" class="form-control" id="cep" name="cep" value="{{ contrato.cep }}">
+    </div>
+    <div class="form-group">
+      <label for="estado">Estado:</label>
+      <input type="text" class="form-control" id="estado" name="estado" value="{{ contrato.estado }}">
+    </div>
+    <div class="form-group">
+      <label for="telefone">Telefone:</label>
+      <input type="text" class="form-control" id="telefone" name="telefone" value="{{ contrato.telefone }}">
+    </div>
+    <div class="form-group">
+      <label for="email">E-mail:</label>
+      <input type="email" class="form-control" id="email" name="email" value="{{ contrato.email }}">
+    </div>
+    <div class="form-group">
+      <label for="valor_contrato">Valor do Contrato:</label>
+      <input type="number" class="form-control" id="valor_contrato" name="valor_contrato" value="{{ contrato.valor_contrato }}">
+    </div>
+    <div class="form-group">
+      <label for="inicio_contrato">Início do Contrato:</label>
+      <input type="date" class="form-control" id="inicio_contrato" name="inicio_contrato" value="{{ contrato.inicio_contrato }}">
+    </div>
+    <div class="form-group">
+      <label for="termino_contrato">Término do Contrato:</label>
+      <input type="date" class="form-control" id="termino_contrato" name="termino_contrato" value="{{ contrato.termino_contrato }}">
+    </div>
+    <button type="submit" class="btn btn-primary" onclick="return confirm('Tem certeza que deseja salvar as alterações?')">Salvar</button>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancelar</a>
+  </form>
+{% endblock %}
