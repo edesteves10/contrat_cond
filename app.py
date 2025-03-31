@@ -28,6 +28,7 @@ class ContratCond(db.Model):
     valor_contrato = db.Column(db.Float, nullable=False)
     inicio_contrato = db.Column(db.String(200), nullable=False)
     termino_contrato = db.Column(db.String(200), nullable=True)
+    abrangencia_contrato = db.Column(db.String(200), nullable=False)
 
 def validate_cnpj(cnpj):
     cnpj = re.sub(r'[^\d]', '', cnpj)
@@ -48,6 +49,7 @@ def index():
         valor_contrato = request.form['valor_contrato']
         inicio_contrato = request.form['inicio_contrato']
         termino_contrato = request.form.get('termino_contrato')
+        abrangencia_contrato = request.form['abrangencia_contrato']
 
         if not validate_cnpj(cnpj):
             flash('CNPJ inválido. Deve conter 14 dígitos numéricos.', 'error')
@@ -57,9 +59,13 @@ def index():
             flash('CNPJ já cadastrado.', 'error')
             return redirect(url_for('index'))
 
+        if not abrangencia_contrato:
+            flash('Abrangência do contrato é obrigatória.', 'error')
+            return redirect(url_for('index'))
+
         contrato = ContratCond(nome=nome, cnpj=cnpj, endereco=endereco, cep=cep, estado=estado, telefone=telefone,
                                email=email, valor_contrato=valor_contrato, inicio_contrato=inicio_contrato,
-                               termino_contrato=termino_contrato)
+                               termino_contrato=termino_contrato, abrangencia_contrato=abrangencia_contrato)
         db.session.add(contrato)
         db.session.commit()
         flash('Dados inseridos com sucesso!', 'success')
@@ -82,6 +88,12 @@ def edit(id):
         contrato.valor_contrato = request.form['valor_contrato']
         contrato.inicio_contrato = request.form['inicio_contrato']
         contrato.termino_contrato = request.form.get('termino_contrato')
+        contrato.abrangencia_contrato = request.form['abrangencia_contrato']
+
+        if not contrato.abrangencia_contrato:
+            flash('Abrangência do contrato é obrigatória.', 'error')
+            return redirect(url_for('edit', id=id))
+
         db.session.commit()
         flash('Dados editados com sucesso!', 'success')
         return redirect(url_for('index'))
@@ -98,6 +110,7 @@ def generate_pdf(id):
     p.drawString(100, 740, f"Início do Contrato: {contrato.inicio_contrato}")
     if contrato.termino_contrato:
         p.drawString(100, 720, f"Término do Contrato: {contrato.termino_contrato}")
+    p.drawString(100, 700, f"Abrangência do Contrato: {contrato.abrangencia_contrato}")
     p.save()
     buffer.seek(0)
     return send_file(buffer, as_attachment=True, download_name=f"contrato_{contrato.id}.pdf",
@@ -109,11 +122,13 @@ def search():
     contratos = ContratCond.query.filter(
         (ContratCond.nome.like(f'%{search_term}%')) |
         (ContratCond.cnpj.like(f'%{search_term}%')) |
-        (ContratCond.telefone.like(f'%{search_term}%'))
+        (ContratCond.telefone.like(f'%{search_term}%')) |
+        (ContratCond.abrangencia_contrato.like(f'%{search_term}%'))
     ).all()
     return render_template('index.html', contratos=contratos)
 
+with app.app_context():
+    db.create_all()
+
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)

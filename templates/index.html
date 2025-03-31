@@ -5,61 +5,50 @@
 {% block content %}
   <h1>Gerenciar Contratos</h1>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      {% for category, message in messages %}
-        <div class="alert alert-{{ category }}">{{ message }}</div>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
-
-  <form method="POST" action="/search">
+  <form method="POST">
     <div class="form-group">
-      <input type="text" name="search_term" class="form-control" placeholder="Pesquisar por nome, CNPJ ou telefone">
-    </div>
-      <button type="submit" class="btn btn-primary">Pesquisar</button>
-  </form>
-
-  <form method="POST" action="/">
-    <div class="form-group">
-      <label for="nome">Nome Empresa:</label>
-      <input type="text" class="form-control" id="nome" name="nome">
+      <label for="nome">Nome:</label>
+      <input type="text" class="form-control" id="nome" name="nome" required>
     </div>
     <div class="form-group">
       <label for="cnpj">CNPJ:</label>
-      <input type="text" class="form-control" id="cnpj" name="cnpj">
+      <input type="text" class="form-control" id="cnpj" name="cnpj" required>
     </div>
     <div class="form-group">
       <label for="endereco">Endereço:</label>
-      <input type="text" class="form-control" id="endereco" name="endereco">
+      <input type="text" class="form-control" id="endereco" name="endereco" required>
     </div>
     <div class="form-group">
       <label for="cep">CEP:</label>
-      <input type="text" class="form-control" id="cep" name="cep">
+      <input type="text" class="form-control" id="cep" name="cep" required>
     </div>
     <div class="form-group">
       <label for="estado">Estado:</label>
-      <input type="text" class="form-control" id="estado" name="estado">
+      <input type="text" class="form-control" id="estado" name="estado" required>
     </div>
     <div class="form-group">
       <label for="telefone">Telefone:</label>
-      <input type="text" class="form-control" id="telefone" name="telefone">
+      <input type="text" class="form-control" id="telefone" name="telefone" required>
     </div>
     <div class="form-group">
-      <label for="email">E-mail:</label>
-      <input type="email" class="form-control" id="email" name="email">
+      <label for="email">Email:</label>
+      <input type="email" class="form-control" id="email" name="email" required>
     </div>
     <div class="form-group">
       <label for="valor_contrato">Valor do Contrato:</label>
-      <input type="number" class="form-control" id="valor_contrato" name="valor_contrato">
+      <input type="number" class="form-control" id="valor_contrato" name="valor_contrato" required>
     </div>
     <div class="form-group">
       <label for="inicio_contrato">Início do Contrato:</label>
-      <input type="date" class="form-control" id="inicio_contrato" name="inicio_contrato">
+      <input type="date" class="form-control" id="inicio_contrato" name="inicio_contrato" required>
     </div>
     <div class="form-group">
       <label for="termino_contrato">Término do Contrato:</label>
       <input type="date" class="form-control" id="termino_contrato" name="termino_contrato">
+    </div>
+    <div class="form-group">
+      <label for="abrangencia_contrato">Abrangência do Contrato:</label>
+      <input type="text" class="form-control" id="abrangencia_contrato" name="abrangencia_contrato" required>
     </div>
     <button type="submit" class="btn btn-primary" onclick="return confirm('Tem certeza que deseja salvar?')">Salvar</button>
   </form>
@@ -68,7 +57,7 @@
   <ul class="list-group">
     {% for contrato in contratos %}
       <li class="list-group-item">
-        {{ contrato.nome }} - {{ contrato.cnpj }} - {{ contrato.endereco }} - {{ contrato.cep }} - {{ contrato.estado }} - {{ contrato.telefone }} - {{ contrato.email }} - {{ contrato.valor_contrato }} - Início: {{ contrato.inicio_contrato }} {% if contrato.termino_contrato %} - Término: {{ contrato.termino_contrato }}{% endif %}
+        {{ contrato.nome }} - {{ contrato.cnpj }} - {{ contrato.endereco }} - {{ contrato.cep }} - {{ contrato.estado }} - {{ contrato.telefone }} - {{ contrato.email }} - {{ contrato.valor_contrato }} - Início: {{ contrato.inicio_contrato }} {% if contrato.termino_contrato %} - Término: {{ contrato.termino_contrato }}{% endif %} - Abrangência: {{ contrato.abrangencia_contrato }}
         <a href="/edit/{{ contrato.id }}" class="btn btn-sm btn-warning" onclick="return confirm('Tem certeza que deseja editar?')">Editar</a>
         <a href="/pdf/{{ contrato.id }}" class="btn btn-sm btn-info">PDF</a>
       </li>
