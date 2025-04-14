@@ -1,16 +1,15 @@
-DROP TABLE IF EXISTS contrat_cond;
-
-CREATE TABLE contrat_cond (
+CREATE TABLE ContratCond (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    nome TEXT NOT NULL,
-    cnpj TEXT NOT NULL,
-    endereco TEXT NOT NULL,
-    cep TEXT NOT NULL,
-    estado TEXT NOT NULL,
-    telefone TEXT NOT NULL,
-    email TEXT NOT NULL,
+    created DATETIME DEFAULT CURRENT_TIMESTAMP,
+    nome VARCHAR(200) NOT NULL,
+    cnpj VARCHAR(14) UNIQUE NOT NULL,
+    endereco VARCHAR(200) NOT NULL,
+    cep VARCHAR(200) NOT NULL,
+    estado VARCHAR(200) NOT NULL,
+    telefone VARCHAR(200) NOT NULL,
+    email VARCHAR(200) NOT NULL,
     valor_contrato REAL NOT NULL,
-    inicio_contrato TEXT NOT NULL,
-    termino_contrato TEXT
+    inicio_contrato VARCHAR(200) NOT NULL,
+    termino_contrato VARCHAR(200),
+    abrangencia_contrato VARCHAR(200) NOT NULL
 );
