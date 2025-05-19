@@ -3,55 +3,137 @@
 {% block title %}Contratos{% endblock %}
 
 {% block content %}
-  <h1>Contratos</h1>
-  <hr>
+<<style>
+    body { /* Estilo para o corpo da página, caso queira um tamanho base maior */
+        font-size: 16px; /* Tamanho de fonte base para o corpo (pode ajustar) */
+    }
+
+    h1.page-title { /* Aumenta a fonte do título principal "Contratos" */
+        font-size: 2.5em;
+        margin-bottom: 0.8em;
+    }
+
+    h2 { /* Aumenta a fonte dos títulos de seção "Novo Contrato" e "Contratos Existentes" */
+        font-size: 1.8em;
+        margin-top: 1.5em;
+        margin-bottom: 0.5em;
+    }
+
+    label {
+        font-size: 1.2em;
+        display: block;
+        margin-bottom: 0.5em;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="number"],
+    input[type="date"] {
+        font-size: 1.2em;
+        padding: 0.5em;
+        margin-bottom: 1em;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    button[type="submit"] {
+        font-size: 1.1em;
+        padding: 0.7em 1.5em;
+    }
+
+    hr {
+        margin: 1em 0;
+    }
+
+    .table th { /* Aumenta a fonte dos cabeçalhos da tabela */
+        font-size: 1.1em;
+        padding: 0.6em;
+        font-weight: bold; /* Deixa os cabeçalhos em negrito para destacar */
+    }
+
+    .table td { /* Aumenta a fonte dos dados da tabela */
+        font-size: 1.1em;
+        padding: 0.6em;
+    }
+
+    .pagination a { /* Aumenta a fonte dos links de paginação */
+        font-size: 1em;
+        padding: 0.5em 0.8em;
+        margin: 0 0.2em;
+        border: 1px solid #ccc;
+        text-decoration: none;
+        color: #333;
+        border-radius: 5px;
+    }
+
+    .pagination .active a { /* Estilo para a página ativa na paginação */
+        background-color: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+
+    /* Estilos específicos para os links da barra de navegação (assumindo que estejam em uma tag 'nav') */
+    nav a {
+        font-size: 1.2em; /* Aumenta a fonte dos links da navegação */
+        margin-right: 1em; /* Adiciona um pouco de espaço entre os links */
+        text-decoration: none; /* Remove sublinhado padrão dos links */
+        color: #333; /* Define a cor do texto */
+    }
+
+    nav a:hover { /* Estilo ao passar o mouse (opcional) */
+        color: #007bff;
+    }
+</style>
+
+<h1 class="page-title">Contratos</h1>
+<hr>
 <h2>Novo Contrato</h2>
 <form method="POST">
-    <div class="form-group">
+    <div>
         <label for="nome">Nome:</label>
-        <input type="text" class="form-control" id="nome" name="nome" required>
+        <input type="text" id="nome" name="nome" required>
     </div>
-    <div class="form-group">
+    <div>
         <label for="cnpj">CNPJ:</label>
-        <input type="text" class="form-control" id="cnpj" name="cnpj" required>
+        <input type="text" id="cnpj" name="cnpj" required>
     </div>
-    <div class="form-group">
+    <div>
         <label for="endereco">Endereço:</label>
-        <input type="text" class="form-control" id="endereco" name="endereco" required>
+        <input type="text" id="endereco" name="endereco" required>
     </div>
-    <div class="form-group">
+    <div>
         <label for="cep">CEP:</label>
-        <input type="text" class="form-control" id="cep" name="cep" required>
+        <input type="text" id="cep" name="cep" required>
     </div>
-    <div class="form-group">
+    <div>
         <label for="estado">Estado:</label>
-        <input type="text" class="form-control" id="estado" name="estado" required>
+        <input type="text" id="estado" name="estado" required>
     </div>
-    <div class="form-group">
+    <div>
         <label for="telefone">Telefone:</label>
-        <input type="text" class="form-control" id="telefone" name="telefone" required>
+        <input type="text" id="telefone" name="telefone" required>
     </div>
-    <div class="form-group">
+    <div>
         <label for="email">Email:</label>
-        <input type="email" class="form-control" id="email" name="email" required>
+        <input type="email" id="email" name="email" required>
     </div>
-    <div class="form-group">
+    <div>
         <label for="valor_contrato">Valor do Contrato:</label>
-        <input type="number" class="form-control" id="valor_contrato" name="valor_contrato" required>
+        <input type="number" step="0.01" id="valor_contrato" name="valor_contrato" required>
     </div>
-    <div class="form-group">
+    <div>
         <label for="inicio_contrato">Início do Contrato:</label>
-        <input type="date" class="form-control" id="inicio_contrato" name="inicio_contrato" required>
+        <input type="date" id="inicio_contrato" name="inicio_contrato" required>
     </div>
-    <div class="form-group">
-        <label for="termino_contrato">Término do Contrato:</label>
-        <input type="date" class="form-control" id="termino_contrato" name="termino_contrato">
+    <div>
+        <label for="termino_contrato">Término do Contrato (opcional):</label>
+        <input type="date" id="termino_contrato" name="termino_contrato">
     </div>
-    <div class="form-group">
+    <div>
         <label for="abrangencia_contrato">Abrangência do Contrato:</label>
-        <input type="text" class="form-control" id="abrangencia_contrato" name="abrangencia_contrato" required>
+        <input type="text" id="abrangencia_contrato" name="abrangencia_contrato" required>
     </div>
-    <button type="submit" class="btn btn-primary">Salvar Contrato</button>
+    <button type="submit">Adicionar Contrato</button>
 </form>
 <hr>
 <h2>Contratos Existentes</h2>
@@ -96,6 +178,9 @@
             <td>
                 <a href="{{ url_for('edit', id=contrato.id) }}" class="btn btn-sm btn-warning">Editar</a>
                 <a href="{{ url_for('generate_pdf', id=contrato.id) }}" class="btn btn-sm btn-info" target="_blank">Gerar PDF</a>
+                <form method="POST" action="{{ url_for('delete_contrato', id=contrato.id) }}" style="display: inline-block;">
+                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja excluir este contrato?')">Excluir</button>
+                </form>
             </td>
         </tr>
         {% endfor %}
@@ -110,23 +195,23 @@
         </div>
     {% endif %}
 {% endwith %}
-      <ul class="pagination">
-      {% if contratos.has_prev %}
-      <li class="page-item"><a class="page-link" href="{{ url_for('index', page=contratos.prev_num) }}">Anterior</a></li>
-      {% endif %}
-      {% for page_num in contratos.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
-      {% if page_num %}
-      {% if contratos.page == page_num %}
-      <li class="page-item active"><a class="page-link" href="{{ url_for('index', page=page_num) }}">{{ page_num }}</a></li>
-      {% else %}
-      <li class="page-item"><a class="page-link" href="{{ url_for('index', page=page_num) }}">{{ page_num }}</a></li>
-      {% endif %}
-      {% else %}
-      <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
-      {% endif %}
-      {% endfor %}
-      {% if contratos.has_next %}
-      <li class="page-item"><a class="page-link" href="{{ url_for('index', page=contratos.next_num) }}">Próximo</a></li>
-      {% endif %}
-    </ul>
-  {% endblock %}
+    <ul class="pagination">
+    {% if contratos.has_prev %}
+    <li class="page-item"><a class="page-link" href="{{ url_for('index', page=contratos.prev_num) }}">Anterior</a></li>
+    {% endif %}
+    {% for page_num in contratos.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+    {% if page_num %}
+    {% if contratos.page == page_num %}
+    <li class="page-item active"><a class="page-link" href="{{ url_for('index', page=page_num) }}">{{ page_num }}</a></li>
+    {% else %}
+    <li class="page-item"><a class="page-link" href="{{ url_for('index', page=page_num) }}">{{ page_num }}</a></li>
+    {% endif %}
+    {% else %}
+    <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+    {% endif %}
+    {% endfor %}
+    {% if contratos.has_next %}
+    <li class="page-item"><a class="page-link" href="{{ url_for('index', page=contratos.next_num) }}">Próximo</a></li>
+    {% endif %}
+</ul>
+{% endblock %}

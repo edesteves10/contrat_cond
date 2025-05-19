@@ -1,0 +1,7 @@
+Collecting reportlab
+  Using cached reportlab-4.4.1-py3-none-any.whl.metadata (1.8 kB)
+Requirement already satisfied: pillow>=9.0.0 in c:\users\ednei\contrat_cond\venv\lib\site-packages (from reportlab) (11.1.0)
+Requirement already satisfied: chardet in c:\users\ednei\contrat_cond\venv\lib\site-packages (from reportlab) (5.2.0)
+Using cached reportlab-4.4.1-py3-none-any.whl (2.0 MB)
+Installing collected packages: reportlab
+Successfully installed reportlab-4.4.1
