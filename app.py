@@ -8,19 +8,15 @@ from io import BytesIO
 import re
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-from reportlab.lib.units import inch, cm # Adicione cm aqui se não estiver
+from reportlab.lib.units import inch, cm
 from PIL import Image as PIL_Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_LEFT
-from reportlab.platypus import Paragraph, Spacer, Image # 'Image' aqui é do reportlab
-#from reportlab.lib.fonts import pdfmetrics
-#from reportlab.lib.fonts import registerFont
+from reportlab.lib.enums import TA_CENTER, TA_LEFT # TA_LEFT já está aqui, vamos usar
+from reportlab.platypus import Paragraph, Spacer, Image
 from reportlab.pdfbase import pdfmetrics as pdfmetrics_base
-# REMOVA ESTA LINHA: from reportlab.pdfbase import pdfbase
-from reportlab.pdfbase import pdfdoc
 from reportlab.pdfbase.ttfonts import TTFont
+from flask import jsonify
 
 # Registrar a fonte Arial (se não estiver padrão no reportlab)
 try:
@@ -197,7 +193,7 @@ def search():
         return render_template('index.html', contratos=contratos)
     except Exception as e:
         flash(f'Erro ao realizar a busca: {e}', 'error')
-        return render_template('index.html', contratos=[])
+    return render_template('index.html', contratos=[])
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -265,112 +261,224 @@ def generate_pdf(id):
             name='Centered',
             parent=normal_style,
             alignment=TA_CENTER,
-            fontName='Arial' # Usar Arial normal para centralizado, negrito será aplicado se necessário
+            fontName='Arial' # Usar Arial normal para centralizado
         )
         centered_bold_style = ParagraphStyle(
             name='CenteredBold',
             parent=centered_style,
             fontName='Arial-Bold',
             fontSize=15,
-            spaceAfter=0.2 * cm # Adicionar espaço após o título
+            spaceAfter=0.05 * cm # Reduzir ainda mais o espaço abaixo do título da empresa
         )
         cnpj_style = ParagraphStyle(
             name='CNPJStyle',
             parent=centered_style,
             fontSize=10,
-            spaceAfter=0.5 * cm # Adicionar espaço após o CNPJ
+            spaceAfter=0.4 * cm # Reduzir um pouco o espaço abaixo do CNPJ
+        )
+        footer_style = ParagraphStyle(
+            name='Footer',
+            fontName='Arial',
+            fontSize=10,
+            alignment=TA_CENTER
+        )
+        section_title_style = ParagraphStyle(
+            name='SectionTitle',
+            parent=centered_style,
+            fontName='Arial-Bold',
+            fontSize=14,
+            spaceAfter=0.5 * cm
         )
 
         # --- Cabeçalho ---
         logo_path = os.path.join(app.root_path, 'static', 'logo.png')
-        logo_width = 3 * cm
-        logo_height = 0 # Inicializa a altura do logo
+        logo_width = 3.5 * cm # Largura desejada para o logo
+        logo_height = 0 # Inicializado, será calculado pela proporção
+        
+        # Posição Y para o topo da área do cabeçalho
+        header_top_y = page_height - margem_superior
+        
+        # Variável para rastrear a posição Y mais baixa ocupada pelo cabeçalho
+        lowest_header_element_y = header_top_y # Começa no topo e desce
 
-        # --- Cabeçalho ---
-        logo_path = os.path.join(app.root_path, 'static', 'logo.png')
-        logo_width = 3 * cm
-        logo_height = 0 # Inicializa a altura do logo
+        # 1. Tentar carregar e posicionar o logo
+        logo_x = margem_esquerda
+        logo_y = header_top_y # Posição inicial para o logo (será ajustada após calcular a altura)
 
         try:
             img = PIL_Image.open(logo_path)
-            img_width, img_height = img.size
-            aspect_ratio = img_height / img_width
+            img_width_orig, img_height_orig = img.size
+            aspect_ratio = img_height_orig / img_width_orig
             logo_height = logo_width * aspect_ratio
+
+            logo_y = header_top_y - logo_height # Posição Y do canto inferior esquerdo do logo
             logo = Image(logo_path, width=logo_width, height=logo_height)
-            # Ajuste na posição Y do logo (subindo um pouco)
-            logo.drawOn(p, margem_esquerda, page_height - margem_superior - logo_height + 0.2 * cm)
+            logo.drawOn(p, logo_x, logo_y)
+            lowest_header_element_y = min(lowest_header_element_y, logo_y) # Atualiza a posição mais baixa
         except FileNotFoundError:
             print(f"Erro: Logo não encontrado em {logo_path}")
+            logo_height = 0 # Se o logo não existe, sua altura é 0 para o layout
+            # Se não houver logo, o texto começará na margem esquerda sem deslocamento do logo.
 
-        # Largura disponível para o texto (aproximadamente)
+        # 2. Preparar e posicionar o texto (Nome da Empresa e CNPJ)
+        # Para centralizar no cabeçalho inteiro, a área de texto começa na margem esquerda e vai até a margem direita.
+        text_area_x_start_full_width = margem_esquerda
+        text_area_width_full_width = page_width - margem_esquerda - margem_direita
+
+        empresa_nome_para = Paragraph("M.A. Automatização", centered_bold_style)
+        cnpj_para = Paragraph("CNPJ: 27.857.310/0001-83", centered_style)
+
+        # Medir a altura dos parágrafos de texto (usando a largura total do cabeçalho)
+        _, empresa_nome_height = empresa_nome_para.wrapOn(p, text_area_width_full_width, page_height)
+        _, cnpj_height = cnpj_para.wrapOn(p, text_area_width_full_width, page_height)
+
+        text_block_gap = 0.2 * cm # Espaço entre o nome da empresa e o CNPJ
+        total_text_block_height = empresa_nome_height + cnpj_height + text_block_gap
+
+        # Calcular a posição vertical para centralizar o bloco de texto com a altura do logo
+        if logo_height > 0:
+            # Centro Y do logo
+            logo_center_y = logo_y + (logo_height / 2)
+            # Topo Y do bloco de texto para centralizá-lo com o logo
+            text_block_top_y = logo_center_y + (total_text_block_height / 2)
+        else:
+            # Se não há logo, simplesmente posicione o texto a partir da margem superior
+            text_block_top_y = header_top_y # Usar header_top_y, que é page_height - margem_superior
+
+        # Posição Y do nome da empresa
+        empresa_nome_y = text_block_top_y - empresa_nome_height
+        # Posição Y do CNPJ (abaixo do nome da empresa)
+        cnpj_y = empresa_nome_y - cnpj_height - text_block_gap
+
+        # Calcular posição X para centralizar o texto dentro da área de texto *total* do cabeçalho
+        empresa_nome_x = text_area_x_start_full_width + (text_area_width_full_width - empresa_nome_para.wrapOn(p, text_area_width_full_width, page_height)[0]) / 2
+        cnpj_x = text_area_x_start_full_width + (text_area_width_full_width - cnpj_para.wrapOn(p, text_area_width_full_width, page_height)[0]) / 2
+
+        # Desenhar os parágrafos de texto
+        empresa_nome_para.drawOn(p, empresa_nome_x, empresa_nome_y)
+        cnpj_para.drawOn(p, cnpj_x, cnpj_y)
+
+        # 3. Desenhar a linha divisória do cabeçalho
+        calculated_lowest_text_y = cnpj_y - cnpj_height # Fundo do CNPJ
+        
+        # Considera o menor ponto entre o logo e o texto para a linha
+        line_y_position = min(lowest_header_element_y, calculated_lowest_text_y) - 0.5 * cm # 0.5 cm de espaço após o cabeçalho
+
+        # A linha deve ir de margem_esquerda a margem_direita
+        p.line(margem_esquerda, line_y_position, page_width - margem_direita, line_y_position)
+
+        # --- Fim do Cabeçalho ---
+
+        # 4. Inserir "Informações do Contrato" centralizado
+        # Definir a largura total de texto utilizável para o corpo do contrato
         texto_width = page_width - margem_esquerda - margem_direita
+        
+        section_title = Paragraph("Informações do Contrato", section_title_style)
+        section_title_width, section_title_height = section_title.wrapOn(p, texto_width, page_height)
+        section_title_x = margem_esquerda + (texto_width - section_title_width) / 2
+        
+        # Posição Y para o título da seção, logo abaixo da linha do cabeçalho
+        y_position = line_y_position - 0.5 * cm # 0.5 cm de espaço após a linha do cabeçalho
+        section_title.drawOn(p, section_title_x, y_position - section_title_height)
+        y_position -= section_title_height + 0.5 * cm # Ajusta y_position para o conteúdo abaixo
 
-        # Título da Empresa (Centralizado e em Negrito)
-        empresa_nome = Paragraph("M.A. Automatização", centered_bold_style)
-        empresa_nome_width, empresa_nome_height = empresa_nome.wrapOn(p, texto_width, page_height)
-
-        # Calcular a posição X para centralizar o texto (considerando a margem esquerda)
-        empresa_x = margem_esquerda + (texto_width - empresa_nome_width) / 2
-        # Ajuste na posição Y do nome da empresa (subindo um pouco mais)
-        empresa_y = page_height - margem_superior - logo_height - empresa_nome_height + 0.1 * cm
-
-        empresa_nome.drawOn(p, empresa_x, empresa_y)
-
-        # CNPJ (Centralizado)
-        cnpj_text = Paragraph("CNPJ: 27.857.310/0001-83", cnpj_style)
-        cnpj_width, cnpj_height = cnpj_text.wrapOn(p, texto_width, page_height)
-        cnpj_x = margem_esquerda + (texto_width - cnpj_width) / 2
-        # Ajuste na posição Y do CNPJ (subindo um pouco)
-        cnpj_y = page_height - margem_superior - logo_height - empresa_nome_height - cnpj_height + 0.3 * cm
-
-        cnpj_text.drawOn(p, cnpj_x, cnpj_y)
-
-        p.line(margem_esquerda, cnpj_y - 0.3 * cm, page_width - margem_direita, cnpj_y - 0.3 * cm)
-
-                    # --- Conteúdo do contrato ---
-        y_position = page_height - margem_superior - logo_height - empresa_nome.height - cnpj_text.height - 1 * cm
+        # --- Conteúdo do contrato (continua aqui, usando a nova y_position) ---
         conteudo_formatado = [
             Paragraph(f"<b>Nome:</b> {contrato.nome}", bold_style),
-            Paragraph(contrato.nome, normal_style),
             Paragraph(f"<b>CNPJ:</b> {contrato.cnpj}", bold_style),
-            Paragraph(contrato.cnpj, normal_style),
             Paragraph(f"<b>Endereço:</b> {contrato.endereco}", bold_style),
-            Paragraph(contrato.endereco, normal_style), # Linha corrigida com o fechamento do parêntese e vírgula
             Paragraph(f"<b>CEP:</b> {contrato.cep}", bold_style),
-            Paragraph(contrato.cep, normal_style),
             Paragraph(f"<b>Estado:</b> {contrato.estado}", bold_style),
-            Paragraph(contrato.estado, normal_style),
             Paragraph(f"<b>Telefone:</b> {contrato.telefone}", bold_style),
-            Paragraph(contrato.telefone, normal_style),
             Paragraph(f"<b>Email:</b> {contrato.email}", bold_style),
-            Paragraph(contrato.email, normal_style),
             Paragraph(f"<b>Valor do Contrato:</b> R$ {contrato.valor_contrato:.2f}", bold_style),
-            Paragraph(f"R$ {contrato.valor_contrato:.2f}", normal_style),
             Paragraph(f"<b>Início do Contrato:</b> {contrato.inicio_contrato}", bold_style),
-            Paragraph(contrato.inicio_contrato, normal_style),
             Paragraph(f"<b>Término do Contrato:</b> {contrato.termino_contrato if contrato.termino_contrato else 'Não definido'}", bold_style),
-            Paragraph(contrato.termino_contrato if contrato.termino_contrato else 'Não definido', normal_style),
             Paragraph(f"<b>Abrangência do Contrato:</b> {contrato.abrangencia_contrato}", bold_style),
-            Paragraph(contrato.abrangencia_contrato, normal_style),
         ]
 
         x_position = margem_esquerda
         for item in conteudo_formatado:
-            item_width, item_height = item.wrapOn(p, page_width - margem_esquerda - margem_direita, page_height)
+            item_width, item_height = item.wrapOn(p, texto_width, page_height)
+            # Verificar se há espaço suficiente para o próximo item
+            if y_position - item_height - 0.2 * cm < margem_inferior + 2*cm: # Ajuste de 2cm para não sobrepor o rodapé e a linha de assinatura
+                p.showPage() # Adiciona nova página
+                # Se desejar repetir o cabeçalho na nova página, você precisaria de uma função separada para desenhá-lo aqui.
+                # Por simplicidade, apenas reiniciamos o y_position para o topo.
+                y_position = page_height - margem_superior # Reinicia Y no topo da nova página
+            
             item.drawOn(p, x_position, y_position - item_height)
-            y_position -= item_height
+            y_position -= item_height + 0.2 * cm # Adiciona um pequeno espaço entre os itens
+
+        # --- NOVAS SEÇÕES: ACORDO E ASSINATURAS ---
+
+        # Definir novos estilos para o texto de acordo e rótulos de assinatura
+        agreement_style = ParagraphStyle(
+            name='AgreementText',
+            parent=normal_style,
+            fontSize=10,
+            alignment=TA_LEFT, # <<-- ALTERADO PARA TA_LEFT
+            spaceAfter=0.5 * cm # Espaço após o texto de acordo
+        )
+        signature_label_style = ParagraphStyle(
+            name='SignatureLabel',
+            parent=normal_style,
+            fontSize=10,
+            alignment=TA_CENTER,
+        )
+
+        # ADICIONE AQUI O CÓDIGO PARA O RODAPÉ (ANTES DAS ASSINATURAS)
+        footer_text_content = "M.A. Automatização - "
+        footer_text_content += f"{contrato.endereco}, {contrato.cep}, {contrato.estado} | Telefone: {contrato.telefone} | Email: {contrato.email}"
+        footer_text = Paragraph(footer_text_content, footer_style)
+        footer_width, footer_height = footer_text.wrapOn(p, texto_width, page_height)
+        footer_x = margem_esquerda + (texto_width - footer_width) / 2
+        footer_y = margem_inferior
+
+
+        # Calcular a posição para o topo do rodapé (considerando que o rodapé já foi definido)
+        y_footer_top = footer_y + footer_height
+
+        # Posição inicial para a seção de assinaturas (acima do rodapé)
+        y_signatures_start = y_footer_top + 4 * cm # 4 cm acima do rodapé (ajuste conforme necessário)
+
+        # Texto "Li e concordo com os termos do contrato."
+        agreement_paragraph = Paragraph("Li e concordo com os termos do contrato.", agreement_style)
+        agreement_width, agreement_height = agreement_paragraph.wrapOn(p, texto_width, page_height)
+        agreement_x = margem_esquerda # <<-- ALTERADO PARA ALINHAR À ESQUERDA
+        agreement_paragraph.drawOn(p, agreement_x, y_signatures_start)
+
+        # Posição para as linhas de assinatura (abaixo do texto de acordo)
+        y_line_position_signature = y_signatures_start - agreement_height - 1.5 * cm # 1.5 cm abaixo do texto de acordo
+
+        # Largura da linha de assinatura
+        signature_line_length = 6 * cm # 6 cm para cada linha
+
+        # Assinatura Empresa (Esquerda)
+        x_empresa_line = margem_esquerda + (texto_width / 4) - (signature_line_length / 2)
+        p.line(x_empresa_line, y_line_position_signature, x_empresa_line + signature_line_length, y_line_position_signature)
+        empresa_label = Paragraph("Assinatura Empresa", signature_label_style)
+        empresa_label_width, empresa_label_height = empresa_label.wrapOn(p, signature_line_length, page_height)
+        empresa_label.drawOn(p, x_empresa_line + (signature_line_length - empresa_label_width) / 2, y_line_position_signature - empresa_label_height - 0.2 * cm)
+
+        # Assinatura Contratante (Direita)
+        x_contratante_line = margem_esquerda + (texto_width * 3 / 4) - (signature_line_length / 2)
+        p.line(x_contratante_line, y_line_position_signature, x_contratante_line + signature_line_length, y_line_position_signature)
+        contratante_label = Paragraph(f"Assinatura Contratante", signature_label_style)
+        contratante_label_width, contratante_label_height = contratante_label.wrapOn(p, signature_line_length, page_height)
+        contratante_label.drawOn(p, x_contratante_line + (signature_line_length - contratante_label_width) / 2, y_line_position_signature - contratante_label_height - 0.2 * cm)
 
         # --- Rodapé (Centralizado, Arial tamanho 10, na margem inferior) ---
-        p.setFont("Arial", 10)
-        footer_text = "Rua Giovanni Di Balduccio, 402, Bairro: Vila Moraes, CEP: 04170-000-SP, E-mail: m.a.automatizacao@gmail.com, Telefone(s): (11) 4645-4199, (11) 4018-3899."
-        p.drawCentredString(page_width / 2, margem_inferior / 2, footer_text)
+        footer_text.drawOn(p, footer_x, footer_y)
 
         p.save()
         output.seek(0)
         return send_file(output, as_attachment=True, download_name=f"contrato_{contrato.id}.pdf", mimetype='application/pdf')
     except Exception as e:
+        print(f'Erro ao gerar PDF (ABNT) no try-except: {e}')
         flash(f'Erro ao gerar PDF (ABNT): {e}', 'error')
         return redirect(url_for('index'))
+
 
 @app.route('/delete/<int:id>', methods=['POST'])
 @login_required

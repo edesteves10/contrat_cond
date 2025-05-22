@@ -3,17 +3,17 @@
 {% block title %}Contratos{% endblock %}
 
 {% block content %}
-<<style>
-    body { /* Estilo para o corpo da página, caso queira um tamanho base maior */
-        font-size: 16px; /* Tamanho de fonte base para o corpo (pode ajustar) */
+<style>
+    body {
+        font-size: 16px;
     }
 
-    h1.page-title { /* Aumenta a fonte do título principal "Contratos" */
+    h1.page-title {
         font-size: 2.5em;
         margin-bottom: 0.8em;
     }
 
-    h2 { /* Aumenta a fonte dos títulos de seção "Novo Contrato" e "Contratos Existentes" */
+    h2 {
         font-size: 1.8em;
         margin-top: 1.5em;
         margin-bottom: 0.5em;
@@ -45,18 +45,18 @@
         margin: 1em 0;
     }
 
-    .table th { /* Aumenta a fonte dos cabeçalhos da tabela */
+    .table th {
         font-size: 1.1em;
         padding: 0.6em;
-        font-weight: bold; /* Deixa os cabeçalhos em negrito para destacar */
+        font-weight: bold;
     }
 
-    .table td { /* Aumenta a fonte dos dados da tabela */
+    .table td {
         font-size: 1.1em;
         padding: 0.6em;
     }
 
-    .pagination a { /* Aumenta a fonte dos links de paginação */
+    .pagination a {
         font-size: 1em;
         padding: 0.5em 0.8em;
         margin: 0 0.2em;
@@ -66,152 +66,211 @@
         border-radius: 5px;
     }
 
-    .pagination .active a { /* Estilo para a página ativa na paginação */
+    .pagination .active a {
         background-color: #007bff;
         color: white;
         border-color: #007bff;
     }
 
-    /* Estilos específicos para os links da barra de navegação (assumindo que estejam em uma tag 'nav') */
     nav a {
-        font-size: 1.2em; /* Aumenta a fonte dos links da navegação */
-        margin-right: 1em; /* Adiciona um pouco de espaço entre os links */
-        text-decoration: none; /* Remove sublinhado padrão dos links */
-        color: #333; /* Define a cor do texto */
+        font-size: 1.2em;
+        margin-right: 1em;
+        text-decoration: none;
+        color: #333;
     }
 
-    nav a:hover { /* Estilo ao passar o mouse (opcional) */
+    nav a:hover {
         color: #007bff;
     }
+
+    /* ESTILOS ATUALIZADOS PARA BOTÕES DE AÇÃO */
+    .table td:last-child {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 5px;
+        justify-content: flex-start;
+        align-items: center; /* Centraliza verticalmente, se a altura for definida, ele alinhará ao meio da célula */
+        min-width: 320px; /* Mantenha ou ajuste se necessário */
+    }
+
+    .btn-action {
+        width: 100px; /* Força uma largura fixa para todos os botões */
+        height: 32px; /* <-- NOVO: Força uma altura fixa para todos os botões (ajuste este valor) */
+        padding: 0; /* <-- NOVO: Reseta o padding para que line-height controle a altura do texto */
+        font-size: 0.9em;
+        line-height: 30px; /* <-- NOVO: Alinha verticalmente o texto dentro do botão com a altura fixa */
+        text-align: center;
+        white-space: nowrap;
+        box-sizing: border-box;
+        text-decoration: none;
+        display: block; /* Essencial para que width e height funcionem corretamente */
+        margin: 0 !important;
+        border-width: 1px !important;
+    }
+
+    /* Estilo específico para o formulário do botão de exclusão */
+    .table td:last-child form {
+        display: contents; /* Mantém o formulário transparente para o layout flex */
+    }
+
+    /* Estilo específico para o botão de exclusão dentro do formulário */
+    /* Garante que o botão dentro do form se comporte exatamente como os links */
+    .table td:last-child form button.btn-action {
+        margin: 0 !important;
+        border-width: 1px !important;
+        /* Reafirmar padding/line-height se necessário, mas as regras acima devem bastar */
+        padding: 0 !important; /* Reafirmar padding zero */
+        line-height: 30px !important; /* Reafirmar line-height */
+    }
+
+
+    /* Ajuste as cores específicas dos botões, se necessário, para consistência */
+    .btn-warning { background-color: #ffc107; border-color: #ffc107; color: #212529; }
+    .btn-info { background-color: #17a2b8; border-color: #17a2b8; }
+    .btn-danger { background-color: #dc3545; border-color: #dc3545; }
+
 </style>
 
 <h1 class="page-title">Contratos</h1>
 <hr>
-<h2>Novo Contrato</h2>
-<form method="POST">
-    <div>
-        <label for="nome">Nome:</label>
-        <input type="text" id="nome" name="nome" required>
-    </div>
-    <div>
-        <label for="cnpj">CNPJ:</label>
-        <input type="text" id="cnpj" name="cnpj" required>
-    </div>
-    <div>
-        <label for="endereco">Endereço:</label>
-        <input type="text" id="endereco" name="endereco" required>
-    </div>
-    <div>
-        <label for="cep">CEP:</label>
-        <input type="text" id="cep" name="cep" required>
-    </div>
-    <div>
-        <label for="estado">Estado:</label>
-        <input type="text" id="estado" name="estado" required>
-    </div>
-    <div>
-        <label for="telefone">Telefone:</label>
-        <input type="text" id="telefone" name="telefone" required>
-    </div>
-    <div>
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required>
-    </div>
-    <div>
-        <label for="valor_contrato">Valor do Contrato:</label>
-        <input type="number" step="0.01" id="valor_contrato" name="valor_contrato" required>
-    </div>
-    <div>
-        <label for="inicio_contrato">Início do Contrato:</label>
-        <input type="date" id="inicio_contrato" name="inicio_contrato" required>
-    </div>
-    <div>
-        <label for="termino_contrato">Término do Contrato (opcional):</label>
-        <input type="date" id="termino_contrato" name="termino_contrato">
-    </div>
-    <div>
-        <label for="abrangencia_contrato">Abrangência do Contrato:</label>
-        <input type="text" id="abrangencia_contrato" name="abrangencia_contrato" required>
-    </div>
-    <button type="submit">Adicionar Contrato</button>
-</form>
-<hr>
-<h2>Contratos Existentes</h2>
-<nav aria-label="Page navigation">
-    <ul class="pagination">
-        {% if contratos.has_prev %}
-        <li class="page-item"><a class="page-link" href="{{ url_for('index', page=contratos.prev_num) }}">Anterior</a></li>
-        {% endif %}
-        {% for page_num in contratos.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
-        {% if page_num %}
-        {% if contratos.page == page_num %}
-        <li class="page-item active"><a class="page-link" href="{{ url_for('index', page=page_num) }}">{{ page_num }}</a></li>
-        {% else %}
-        <li class="page-item"><a class="page-link" href="{{ url_for('index', page=page_num) }}">{{ page_num }}</a></li>
-        {% endif %}
-        {% else %}
-        <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
-        {% endif %}
-        {% endfor %}
-        {% if contratos.has_next %}
-        <li class="page-item"><a class="page-link" href="{{ url_for('index', page=contratos.next_num) }}">Próximo</a></li>
-        {% endif %}
-    </ul>
-</nav>
-<table class="table">
-    <thead>
-        <tr>
-            <th>Nome</th>
-            <th>CNPJ</th>
-            <th>Início</th>
-            <th>Término</th>
-            <th>Ações</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for contrato in contratos.items %}
-        <tr>
-            <td>{{ contrato.nome }}</td>
-            <td>{{ contrato.cnpj }}</td>
-            <td>{{ contrato.inicio_contrato }}</td>
-            <td>{{ contrato.termino_contrato }}</td>
-            <td>
-                <a href="{{ url_for('edit', id=contrato.id) }}" class="btn btn-sm btn-warning">Editar</a>
-                <a href="{{ url_for('generate_pdf', id=contrato.id) }}" class="btn btn-sm btn-info" target="_blank">Gerar PDF</a>
-                <form method="POST" action="{{ url_for('delete_contrato', id=contrato.id) }}" style="display: inline-block;">
-                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja excluir este contrato?')">Excluir</button>
-                </form>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% with messages = get_flashed_messages() %}
+
+{# Mensagens flash para feedback #}
+{% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-        <div class="alert alert-success">
-            {% for message in messages %}
-                {{ message }}<br>
-            {% endfor %}
-        </div>
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
     {% endif %}
 {% endwith %}
-    <ul class="pagination">
-    {% if contratos.has_prev %}
-    <li class="page-item"><a class="page-link" href="{{ url_for('index', page=contratos.prev_num) }}">Anterior</a></li>
-    {% endif %}
-    {% for page_num in contratos.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
-    {% if page_num %}
-    {% if contratos.page == page_num %}
-    <li class="page-item active"><a class="page-link" href="{{ url_for('index', page=page_num) }}">{{ page_num }}</a></li>
-    {% else %}
-    <li class="page-item"><a class="page-link" href="{{ url_for('index', page=page_num) }}">{{ page_num }}</a></li>
-    {% endif %}
-    {% else %}
-    <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
-    {% endif %}
-    {% endfor %}
-    {% if contratos.has_next %}
-    <li class="page-item"><a class="page-link" href="{{ url_for('index', page=contratos.next_num) }}">Próximo</a></li>
-    {% endif %}
-</ul>
+
+<h2>Novo Contrato</h2>
+<form method="POST" action="{{ url_for('index') }}">
+    <div class="form-group">
+        <label for="nome">Nome:</label>
+        <input type="text" class="form-control" id="nome" name="nome" required>
+    </div>
+    <div class="form-group">
+        <label for="cnpj">CNPJ:</label>
+        <input type="text" class="form-control" id="cnpj" name="cnpj" required>
+    </div>
+    <div class="form-group">
+        <label for="endereco">Endereço:</label>
+        <input type="text" class="form-control" id="endereco" name="endereco" required>
+    </div>
+    <div class="form-group">
+        <label for="cep">CEP:</label>
+        <input type="text" class="form-control" id="cep" name="cep" required>
+    </div>
+    <div class="form-group">
+        <label for="estado">Estado:</label>
+        <input type="text" class="form-control" id="estado" name="estado" required>
+    </div>
+    <div class="form-group">
+        <label for="telefone">Telefone:</label>
+        <input type="text" class="form-control" id="telefone" name="telefone" required>
+    </div>
+    <div class="form-group">
+        <label for="email">Email:</label>
+        <input type="email" class="form-control" id="email" name="email" required>
+    </div>
+    <div class="form-group">
+        <label for="valor_contrato">Valor do Contrato:</label>
+        <input type="number" step="0.01" class="form-control" id="valor_contrato" name="valor_contrato" required>
+    </div>
+    <div class="form-group">
+        <label for="inicio_contrato">Início do Contrato:</label>
+        <input type="date" class="form-control" id="inicio_contrato" name="inicio_contrato" required>
+    </div>
+    <div class="form-group">
+        <label for="termino_contrato">Término do Contrato (opcional):</label>
+        <input type="date" class="form-control" id="termino_contrato" name="termino_contrato">
+    </div>
+    <div class="form-group">
+        <label for="abrangencia_contrato">Abrangência do Contrato:</label>
+        <input type="text" class="form-control" id="abrangencia_contrato" name="abrangencia_contrato" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Adicionar Contrato</button>
+</form>
+
+<h2 class="mt-5">Contratos Existentes</h2>
+<hr>
+
+{# Formulário de Busca #}
+<form method="POST" action="{{ url_for('search') }}" class="mb-3">
+    <div class="form-row align-items-center">
+        <div class="col-auto">
+            <label class="sr-only" for="search">Pesquisar Contrato</label>
+            <input type="text" class="form-control" id="search" name="query" placeholder="Pesquisar por Nome ou CNPJ">
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Pesquisar</button>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Limpar Busca</a>
+        </div>
+    </div>
+</form>
+
+{# Exibe a tabela principal de contratos #}
+{% if contratos and contratos.items %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>CNPJ</th>
+                    <th>Endereço</th>
+                    <th>Criado em</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for contrato in contratos.items %}
+                    <tr>
+                        <td>{{ contrato.id }}</td>
+                        <td>{{ contrato.nome }}</td>
+                        <td>{{ contrato.cnpj }}</td>
+                        <td>{{ contrato.endereco }}</td>
+                        <td>{{ contrato.created.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                        <td>
+                            <a href="{{ url_for('edit', id=contrato.id) }}" class="btn btn-warning btn-action">Editar</a>
+                            <a href="{{ url_for('generate_pdf', id=contrato.id) }}" class="btn btn-info btn-action" target="_blank">Gerar PDF</a>
+                            <form method="POST" action="{{ url_for('delete_contrato', id=contrato.id) }}">
+                                <button type="submit" class="btn btn-danger btn-action" onclick="return confirm('Tem certeza que deseja excluir este contrato?')">Excluir</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# Paginação para a lista principal de contratos #}
+    <nav aria-label="Navegação da página">
+        <ul class="pagination justify-content-center">
+            {% if contratos.has_prev %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('index', page=contratos.prev_num) }}">Anterior</a></li>
+            {% endif %}
+            {% for page_num in contratos.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                {% if page_num %}
+                    {% if contratos.page == page_num %}
+                        <li class="page-item active"><a class="page-link" href="{{ url_for('index', page=page_num) }}">{{ page_num }}</a></li>
+                    {% else %}
+                        <li class="page-item"><a class="page-link" href="{{ url_for('index', page=page_num) }}">{{ page_num }}</a></li>
+                    {% endif %}
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+            {% if contratos.has_next %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('index', page=contratos.next_num) }}">Próxima</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+{% else %}
+    <p>Nenhum contrato cadastrado ou encontrado.</p>
+{% endif %}
+
 {% endblock %}
