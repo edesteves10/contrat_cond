@@ -5,7 +5,7 @@
 {% block content %}
 <style>
     body {
-        font-size: 16px;
+        font-size: 22px;
     }
 
     h1.page-title {
@@ -30,6 +30,15 @@
     input[type="number"],
     input[type="date"] {
         font-size: 1.2em;
+        padding: 0.5em;
+        margin-bottom: 1em;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* <-- CORREÇÃO AQUI: 'select' NÃO DEVE ESTAR ANINHADO DENTRO DE input[type="date"] --> */
+    select.form-control { /* Use .form-control para ser mais específico do Bootstrap */
+        font-size: 0.8em; /* A fonte do campo de seleção e, muitas vezes, das opções */
         padding: 0.5em;
         margin-bottom: 1em;
         width: 100%;
@@ -148,49 +157,59 @@
 
 <h2>Novo Contrato</h2>
 <form method="POST" action="{{ url_for('index') }}">
+    {# Certifique-se de usar form.csrf_token para formulários WTForms #}
+    {{ form.csrf_token }} 
+
     <div class="form-group">
-        <label for="nome">Nome:</label>
-        <input type="text" class="form-control" id="nome" name="nome" required>
+        {{ form.nome.label }}
+        {{ form.nome(class="form-control") }}
     </div>
     <div class="form-group">
-        <label for="cnpj">CNPJ:</label>
-        <input type="text" class="form-control" id="cnpj" name="cnpj" required>
+        {{ form.cnpj.label }}
+        {{ form.cnpj(class="form-control") }}
     </div>
     <div class="form-group">
-        <label for="endereco">Endereço:</label>
-        <input type="text" class="form-control" id="endereco" name="endereco" required>
+        {{ form.endereco.label }}
+        {{ form.endereco(class="form-control") }}
     </div>
     <div class="form-group">
-        <label for="cep">CEP:</label>
-        <input type="text" class="form-control" id="cep" name="cep" required>
+        {{ form.cep.label }}
+        {{ form.cep(class="form-control") }}
     </div>
     <div class="form-group">
-        <label for="estado">Estado:</label>
-        <input type="text" class="form-control" id="estado" name="estado" required>
+        {{ form.estado.label }}
+        {{ form.estado(class="form-control") }}
     </div>
     <div class="form-group">
-        <label for="telefone">Telefone:</label>
-        <input type="text" class="form-control" id="telefone" name="telefone" required>
+        {{ form.telefone.label }}
+        {{ form.telefone(class="form-control") }}
     </div>
     <div class="form-group">
-        <label for="email">Email:</label>
-        <input type="email" class="form-control" id="email" name="email" required>
+        {{ form.email.label }}
+        {{ form.email(class="form-control") }}
+    </div>
+    
+    <div class="form-group">
+        {{ form.tipo_indice.label }}
+        {{ form.tipo_indice(class="form-control") }}
+    </div>
+
+    <div class="form-group">
+        {{ form.valor_contrato.label }}
+        {{ form.valor_contrato(class="form-control") }}
+    </div>
+    
+    <div class="form-group">
+        {{ form.inicio_contrato.label }}
+        {{ form.inicio_contrato(class="form-control") }}
     </div>
     <div class="form-group">
-        <label for="valor_contrato">Valor do Contrato:</label>
-        <input type="number" step="0.01" class="form-control" id="valor_contrato" name="valor_contrato" required>
+        {{ form.termino_contrato.label }}
+        {{ form.termino_contrato(class="form-control") }}
     </div>
     <div class="form-group">
-        <label for="inicio_contrato">Início do Contrato:</label>
-        <input type="date" class="form-control" id="inicio_contrato" name="inicio_contrato" required>
-    </div>
-    <div class="form-group">
-        <label for="termino_contrato">Término do Contrato (opcional):</label>
-        <input type="date" class="form-control" id="termino_contrato" name="termino_contrato">
-    </div>
-    <div class="form-group">
-        <label for="abrangencia_contrato">Abrangência do Contrato:</label>
-        <input type="text" class="form-control" id="abrangencia_contrato" name="abrangencia_contrato" required>
+        {{ form.abrangencia_contrato.label }}
+        {{ form.abrangencia_contrato(class="form-control") }}
     </div>
     <button type="submit" class="btn btn-primary">Adicionar Contrato</button>
 </form>
@@ -203,7 +222,7 @@
     <div class="form-row align-items-center">
         <div class="col-auto">
             <label class="sr-only" for="search">Pesquisar Contrato</label>
-            <input type="text" class="form-control" id="search" name="query" placeholder="Pesquisar por Nome ou CNPJ">
+            <input type="text" class="form-control" id="search" name="query" placeholder="Pesquisar por Nome ou CNPJ" value="{{ search_query if search_query else '' }}">
         </div>
         <div class="col-auto">
             <button type="submit" class="btn btn-primary">Pesquisar</button>
@@ -212,7 +231,14 @@
     </div>
 </form>
 
-{# Exibe a tabela principal de contratos #}
+{# <-- INÍCIO: LÓGICA DE EXIBIÇÃO CONDICIONAL E PAGINAÇÃO --> #}
+
+{# Mensagem informativa quando exibindo apenas os últimos 3 contratos #}
+{% if mostrar_apenas_ultimos %}
+    <p>Exibindo os 3 últimos contratos adicionados. Use a busca acima para encontrar outros contratos.</p>
+{% endif %}
+
+{# Exibe a tabela principal de contratos SOMENTE se houver itens OU se for um resultado de busca #}
 {% if contratos and contratos.items %}
     <div class="table-responsive">
         <table class="table table-striped">
@@ -233,10 +259,11 @@
                         <td>{{ contrato.nome }}</td>
                         <td>{{ contrato.cnpj }}</td>
                         <td>{{ contrato.endereco }}</td>
-                        <td>{{ contrato.created.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                        <td>{{ contrato.data_criacao.strftime('%d/%m/%Y %H:%M:%S') }}</td>
                         <td>
-                            <a href="{{ url_for('edit', id=contrato.id) }}" class="btn btn-warning btn-action">Editar</a>
+                            {# Mantenha apenas UM link para gerar o PDF, apontando para a rota '/pdf/<int:id>' #}
                             <a href="{{ url_for('generate_pdf', id=contrato.id) }}" class="btn btn-info btn-action" target="_blank">Gerar PDF</a>
+                            <a href="{{ url_for('edit', id=contrato.id) }}" class="btn btn-warning btn-action">Editar</a>
                             <form method="POST" action="{{ url_for('delete_contrato', id=contrato.id) }}">
                                 <button type="submit" class="btn btn-danger btn-action" onclick="return confirm('Tem certeza que deseja excluir este contrato?')">Excluir</button>
                             </form>
@@ -247,30 +274,44 @@
         </table>
     </div>
 
-    {# Paginação para a lista principal de contratos #}
+    {# Paginação para a lista de contratos #}
     <nav aria-label="Navegação da página">
         <ul class="pagination justify-content-center">
             {% if contratos.has_prev %}
-                <li class="page-item"><a class="page-link" href="{{ url_for('index', page=contratos.prev_num) }}">Anterior</a></li>
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('index', page=contratos.prev_num) if mostrar_apenas_ultimos else url_for('search', page=contratos.prev_num, query=search_query) }}">Anterior</a>
+                </li>
             {% endif %}
             {% for page_num in contratos.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
                 {% if page_num %}
                     {% if contratos.page == page_num %}
-                        <li class="page-item active"><a class="page-link" href="{{ url_for('index', page=page_num) }}">{{ page_num }}</a></li>
+                        <li class="page-item active">
+                            <a class="page-link" href="{{ url_for('index', page=page_num) if mostrar_apenas_ultimos else url_for('search', page=page_num, query=search_query) }}">{{ page_num }}</a>
+                        </li>
                     {% else %}
-                        <li class="page-item"><a class="page-link" href="{{ url_for('index', page=page_num) }}">{{ page_num }}</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('index', page=page_num) if mostrar_apenas_ultimos else url_for('search', page=page_num, query=search_query) }}">{{ page_num }}</a>
+                        </li>
                     {% endif %}
                 {% else %}
                     <li class="page-item disabled"><span class="page-link">...</span></li>
                 {% endif %}
             {% endfor %}
             {% if contratos.has_next %}
-                <li class="page-item"><a class="page-link" href="{{ url_for('index', page=contratos.next_num) }}">Próxima</a></li>
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('index', page=contratos.next_num) if mostrar_apenas_ultimos else url_for('search', page=contratos.next_num, query=search_query) }}">Próxima</a>
+                </li>
             {% endif %}
         </ul>
     </nav>
 {% else %}
-    <p>Nenhum contrato cadastrado ou encontrado.</p>
+    {# Mensagens quando nenhum contrato é encontrado, diferenciando entre carregamento inicial e busca #}
+    {% if not search_query %}
+        <p>Nenhum contrato cadastrado.</p>
+    {% elif search_query %}
+        <p>Nenhum contrato encontrado para a pesquisa "{{ search_query }}".</p>
+    {% endif %}
 {% endif %}
+{# <-- FIM: LÓGICA DE EXIBIÇÃO CONDICIONAL E PAGINAÇÃO --> #}
 
 {% endblock %}

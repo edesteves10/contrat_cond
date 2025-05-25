@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Contrato{% endblock %}
+
+{% block content %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const valorContratoInput = document.getElementById('valor_contrato'); // Certifique-se que o ID é 'valor_contrato'
+
+        if (valorContratoInput) {
+            // Função para formatar o número no padrão brasileiro (1.234,56)
+            function formatarMoeda(value) {
+                // 1. Limpar o valor: remover tudo que não é número ou vírgula
+                let cleanedValue = value.replace(/[^0-9,]/g, '');
+
+                // 2. Lidar com a vírgula decimal
+                const parts = cleanedValue.split(',');
+                let integerPart = parts[0];
+                let decimalPart = parts.length > 1 ? ',' + parts[1].substring(0, 2) : ''; // Limita a 2 casas decimais
+
+                // 3. Remover pontos de milhar existentes para reformatar
+                integerPart = integerPart.replace(/\./g, '');
+
+                // 4. Adicionar pontos de milhar a cada 3 dígitos da parte inteira
+                // Esta regex insere um ponto antes de cada grupo de 3 dígitos, exceto o primeiro,
+                // quando seguido por outros 3 dígitos e não no final da string.
+                integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+                return integerPart + decimalPart;
+            }
+
+            // Event Listener para formatar enquanto o usuário digita
+            valorContratoInput.addEventListener('input', function(e) {
+                e.target.value = formatarMoeda(e.target.value);
+            });
+
+            // Formatar o valor inicial quando a página carrega (essencial para o modo de edição)
+            // O valor vem do Python/banco como "1234.56" (ponto decimal)
+            // Queremos exibi-lo como "1.234,56"
+            if (valorContratoInput.value) {
+                let initialValue = valorContratoInput.value;
+                // Converte o ponto decimal para vírgula ANTES de aplicar a formatação
+                initialValue = initialValue.replace('.', ',');
+                valorContratoInput.value = formatarMoeda(initialValue);
+            }
+        }
+    });
+</script>
+
+<h1>Editar Contrato</h1>
+
+<form method="POST">
+    {{ form.csrf_token }} {# Não esqueça do token CSRF! #}
+
+    {# Campo para o nome do contrato #}
+    <div class="form-group">
+        {{ form.nome.label }}
+        {{ form.nome(class="form-control") }}
+        {% if form.nome.errors %}
+            <div class="invalid-feedback d-block">
+                {% for error in form.nome.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    {# Campo para o CNPJ #}
+    <div class="form-group">
+        {{ form.cnpj.label }}
+        {{ form.cnpj(class="form-control") }}
+        {% if form.cnpj.errors %}
+            <div class="invalid-feedback d-block">
+                {% for error in form.cnpj.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    {# Campo para o endereço #}
+    <div class="form-group">
+        {{ form.endereco.label }}
+        {{ form.endereco(class="form-control") }}
+        {% if form.endereco.errors %}
+            <div class="invalid-feedback d-block">
+                {% for error in form.endereco.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    {# Campo para o CEP #}
+    <div class="form-group">
+        {{ form.cep.label }}
+        {{ form.cep(class="form-control") }}
+        {% if form.cep.errors %}
+            <div class="invalid-feedback d-block">
+                {% for error in form.cep.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    {# Campo para o estado #}
+    <div class="form-group">
+        {{ form.estado.label }}
+        {{ form.estado(class="form-control") }}
+        {% if form.estado.errors %}
+            <div class="invalid-feedback d-block">
+                {% for error in form.estado.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    {# Campo para o telefone #}
+    <div class="form-group">
+        {{ form.telefone.label }}
+        {{ form.telefone(class="form-control") }}
+        {% if form.telefone.errors %}
+            <div class="invalid-feedback d-block">
+                {% for error in form.telefone.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    {# Campo para o email #}
+    <div class="form-group">
+        {{ form.email.label }}
+        {{ form.email(class="form-control") }}
+        {% if form.email.errors %}
+            <div class="invalid-feedback d-block">
+                {% for error in form.email.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    {# Campo para o valor do contrato com formatação de moeda #}
+    <div class="form-group">
+        {{ form.valor_contrato.label }}
+        {{ form.valor_contrato(class="form-control") }}
+        {% if form.valor_contrato.errors %}
+            <div class="invalid-feedback d-block">
+                {% for error in form.valor_contrato.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    {# Campo para a data de início do contrato #}
+    <div class="form-group">
+        {{ form.inicio_contrato.label }}
+        {{ form.inicio_contrato(class="form-control") }}
+        {% if form.inicio_contrato.errors %}
+            <div class="invalid-feedback d-block">
+                {% for error in form.inicio_contrato.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    {# Campo para a data de término do contrato #}
+    <div class="form-group">
+        {{ form.termino_contrato.label }}
+        {{ form.termino_contrato(class="form-control") }}
+        {% if form.termino_contrato.errors %}
+            <div class="invalid-feedback d-block">
+                {% for error in form.termino_contrato.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    {# Campo para a abrangência do contrato #}
+    <div class="form-group">
+        {{ form.abrangencia_contrato.label }}
+        {{ form.abrangencia_contrato(class="form-control") }}
+        {% if form.abrangencia_contrato.errors %}
+            <div class="invalid-feedback d-block">
+                {% for error in form.abrangencia_contrato.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    {# Campo para o tipo de índice de reajuste #}
+    <div class="form-group">
+        {{ form.tipo_indice.label }}
+        {{ form.tipo_indice(class="form-control") }}
+        {% if form.tipo_indice.errors %}
+            <div class="invalid-feedback d-block">
+                {% for error in form.tipo_indice.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <button type="submit" class="btn btn-primary" onclick="return confirm('Tem certeza que deseja salvar as alterações?')">Salvar</button>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+
+{% endblock %}

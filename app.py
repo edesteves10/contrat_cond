@@ -1,22 +1,51 @@
 import os
-import datetime
+from datetime import datetime
 import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, send_file, flash, session
 from flask_sqlalchemy import SQLAlchemy
+from flask import send_file
 from reportlab.pdfgen import canvas
 from io import BytesIO
-import re
+import re 
+from decimal import Decimal
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch, cm
 from PIL import Image as PIL_Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_LEFT # TA_LEFT já está aqui, vamos usar
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT # TA_LEFT já está aqui, vamos usar
 from reportlab.platypus import Paragraph, Spacer, Image
 from reportlab.pdfbase import pdfmetrics as pdfmetrics_base
 from reportlab.pdfbase.ttfonts import TTFont
 from flask import jsonify
+from flask_wtf import FlaskForm
+from wtforms import StringField, DateField, DecimalField, SelectField, SubmitField, EmailField
+from wtforms.validators import DataRequired, Length, Regexp, Optional, NumberRange # <-- Adicione NumberRange aqui!
+from wtforms.widgets import TextInput # Importar TextInput para forçar o tipo text
+
+# Se você já tem a classe ContratoForm, altere apenas o valor_contrato
+class ContratoForm(FlaskForm):
+    nome = StringField('Nome', validators=[DataRequired(), Length(max=100)])
+    cnpj = StringField('CNPJ', validators=[DataRequired(), Length(min=14, max=18)])
+    endereco = StringField('Endereço', validators=[DataRequired(), Length(max=200)])
+    cep = StringField('CEP', validators=[DataRequired(), Length(min=8, max=9)])
+    estado = StringField('Estado', validators=[DataRequired(), Length(max=50)])
+    telefone = StringField('Telefone', validators=[DataRequired(), Length(max=20)])
+    email = EmailField('Email', validators=[DataRequired(), Length(max=100)])
+
+    valor_contrato = DecimalField(
+        'Valor do Contrato (R$)',
+        validators=[Optional(), NumberRange(min=0)],
+        render_kw={"placeholder": "Ex: 1.234,56", "type": "text"} # Adicione "type": "text"
+    )
+        
+    
+    inicio_contrato = DateField('Início do Contrato', format='%Y-%m-%d', validators=[DataRequired()])
+    termino_contrato = DateField('Término do Contrato', format='%Y-%m-%d', validators=[Optional()])
+    abrangencia_contrato = StringField('Abrangência do Contrato', validators=[DataRequired(), Length(max=100)])
+    tipo_indice = StringField('Tipo de Índice de Reajuste', validators=[Optional(), Length(max=10)])
+    submit = SubmitField('Salvar')
 
 # Registrar a fonte Arial (se não estiver padrão no reportlab)
 try:
@@ -62,19 +91,26 @@ def load_user(user_id):
         return None
 
 class ContratCond(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    created = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-    nome = db.Column(db.String(200), nullable=False)
-    cnpj = db.Column(db.String(14), unique=True, nullable=False)
+    id = db.Column(db.Integer, primary_key=True) # <--- CHAVE PRIMÁRIA CORRETA
+
+    nome = db.Column(db.String(100), nullable=False)
+    cnpj = db.Column(db.String(20), unique=True, nullable=False)
     endereco = db.Column(db.String(200), nullable=False)
-    cep = db.Column(db.String(200), nullable=False)
-    estado = db.Column(db.String(200), nullable=False)
-    telefone = db.Column(db.String(200), nullable=False)
-    email = db.Column(db.String(200), nullable=False)
-    valor_contrato = db.Column(db.Float, nullable=False)
-    inicio_contrato = db.Column(db.String(200), nullable=False)
-    termino_contrato = db.Column(db.String(200))
-    abrangencia_contrato = db.Column(db.String(200), nullable=False)
+    cep = db.Column(db.String(10), nullable=False)
+    estado = db.Column(db.String(50), nullable=False)
+    telefone = db.Column(db.String(20), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    valor_contrato = db.Column(db.Numeric(10, 2), nullable=False)
+    inicio_contrato = db.Column(db.Date, nullable=False)
+    termino_contrato = db.Column(db.Date, nullable=True)
+    abrangencia_contrato = db.Column(db.String(100), nullable=False)
+    tipo_indice = db.Column(db.String(50), nullable=True)
+    
+    # Exemplo de coluna de data de criação (opcional, mas boa prática)
+    data_criacao = db.Column(db.DateTime, default=datetime.utcnow) 
+
+    def __repr__(self):
+        return f'<ContratCond {self.nome}>'
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -114,86 +150,198 @@ def logout():
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def index():
-    if request.method == 'POST':
-        try:
-            nome = request.form['nome']
-            cnpj = request.form['cnpj']
-            endereco = request.form['endereco']
-            cep = request.form['cep']
-            estado = request.form['estado']
-            telefone = request.form['telefone']
-            email = request.form['email']
-            valor_contrato_str = request.form['valor_contrato']
-            inicio_contrato = request.form['inicio_contrato']
-            termino_contrato = request.form.get('termino_contrato') or None
-            abrangencia_contrato = request.form['abrangencia_contrato']
+    form = ContratoForm() # <--- INSTANCIE O FORMULÁRIO AQUI
 
+    if form.validate_on_submit():
+        nome = form.nome.data
+        cnpj = form.cnpj.data
+        endereco = form.endereco.data
+        cep = form.cep.data
+        estado = form.estado.data
+        telefone = form.telefone.data
+        email = form.email.data
+        tipo_indice = form.tipo_indice.data # Novo campo
+        valor_contrato = form.valor_contrato.data
+        inicio_contrato = form.inicio_contrato.data
+        termino_contrato = form.termino_contrato.data
+        abrangencia_contrato = form.abrangencia_contrato.data
+
+        novo_contrato = ContratCond(
+            nome=nome, cnpj=cnpj, endereco=endereco, cep=cep, estado=estado,
+            telefone=telefone, email=email, tipo_indice=tipo_indice, # Adicione o novo campo
+            valor_contrato=valor_contrato, inicio_contrato=inicio_contrato,
+            termino_contrato=termino_contrato, abrangencia_contrato=abrangencia_contrato
+        )
+        db.session.add(novo_contrato)
+        db.session.commit()
+        flash('Contrato adicionado com sucesso!', 'success')
+        return redirect(url_for('index'))
+    else:
+        # Se o formulário não validar no POST ou for um GET request
+        # Flash errors if any (for example, if data is missing on POST)
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f"Erro no campo '{getattr(form, field).label.text}': {error}", 'danger')
+
+    page = request.args.get('page', 1, type=int)
+    per_page = 5 # Ajuste conforme sua necessidade de paginação
+    contratos = ContratCond.query.order_by(ContratCond.data_criacao.desc()).paginate(page=page, per_page=per_page)
+    mostrar_apenas_ultimos = True # Para o caso inicial
+
+    return render_template('index.html', contratos=contratos, mostrar_apenas_ultimos=mostrar_apenas_ultimos, search_query=None, form=form) # <--- PASSE O FORMULÁRIO AQUI
+    
+@app.route('/add_contrato', methods=['GET', 'POST'])
+@login_required
+def add_contrato():
+    form = ContratoForm()
+    if form.validate_on_submit():
+        novo_cnpj = form.cnpj.data
+        valor_contrato_str = form.valor_contrato.data
+        try:
+            novo_valor = float(valor_contrato_str.replace('.', '').replace(',', '.'))
+        except ValueError:
+            flash('Formato de valor do contrato inválido. Use o formato 1.234,56', 'danger')
+            return render_template('add_contrato.html', form=form)
+
+        novo_inicio = form.inicio_contrato.data
+        novo_termino = form.termino_contrato.data
+
+        contrato_existente = ContratCond.query.filter_by(
+            cnpj=novo_cnpj,
+            valor_contrato=novo_valor,
+            inicio_contrato=novo_inicio,
+            termino_contrato=novo_termino
+        ).first()
+
+        if contrato_existente:
+            flash('Já existe um contrato com o mesmo CNPJ, valor de contrato, data de início e data de término.', 'danger')
+            return render_template('add_contrato.html', form=form)
+        else:
             try:
-                valor_contrato = float(valor_contrato_str)
-                novo_contrato = ContratCond(nome=nome, cnpj=cnpj, endereco=endereco, cep=cep, estado=estado, telefone=telefone, email=email, valor_contrato=valor_contrato, inicio_contrato=inicio_contrato, termino_contrato=termino_contrato, abrangencia_contrato=abrangencia_contrato)
-                db.session.add(novo_contrato)
+                contrato = ContratCond(
+                    nome=form.nome.data,
+                    cnpj=novo_cnpj,
+                    endereco=form.endereco.data,
+                    cep=form.cep.data,
+                    estado=form.estado.data,
+                    telefone=form.telefone.data,
+                    email=form.email.data,
+                    valor_contrato=novo_valor,
+                    inicio_contrato=novo_inicio,
+                    termino_contrato=novo_termino,
+                    abrangencia_contrato=form.abrangencia_contrato.data,
+                    tipo_indice=form.tipo_indice.data,
+                    created=datetime.utcnow()
+                )
+                db.session.add(contrato)
                 db.session.commit()
                 flash('Contrato adicionado com sucesso!', 'success')
                 return redirect(url_for('index'))
-            except ValueError:
-                flash('Valor do contrato inválido.', 'error')
             except Exception as e:
                 db.session.rollback()
-                flash(f'Erro ao adicionar contrato: {e}', 'error')
-        except KeyError as e:
-            flash(f'Campo obrigatório ausente: {e}', 'error')
-        except Exception as e:
-            flash(f'Ocorreu um erro ao processar o formulário: {e}', 'error')
+                flash(f'Erro ao adicionar contrato: {e}', 'danger')
+                return render_template('add_contrato.html', form=form)
 
-    page = request.args.get('page', 1, type=int)
-    contratos = ContratCond.query.paginate(page=page, per_page=10)
-    return render_template('index.html', contratos=contratos)
+    return render_template('add_contrato.html', form=form)
 
+   
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit(id):
     contrato = ContratCond.query.get_or_404(id)
-    if request.method == 'POST':
-        try:
-            contrato.nome = request.form['nome']
-            contrato.cnpj = request.form['cnpj']
-            contrato.endereco = request.form['endereco']
-            contrato.cep = request.form['cep']
-            contrato.estado = request.form['estado']
-            contrato.telefone = request.form['telefone']
-            contrato.email = request.form['email']
-            valor_contrato_str = request.form['valor_contrato']
-            contrato.inicio_contrato = request.form['inicio_contrato']
-            contrato.termino_contrato = request.form.get('termino_contrato') or None
-            contrato.abrangencia_contrato = request.form['abrangencia_contrato']
+    # Popula o formulário com os dados existentes do contrato para o GET request
+    # ou para re-exibir o formulário com erros de validação
+    form = ContratoForm(obj=contrato) 
 
-            try:
-                contrato.valor_contrato = float(valor_contrato_str)
-                db.session.commit()
-                flash('Contrato atualizado com sucesso!', 'success')
-                return redirect(url_for('index'))
-            except ValueError:
-                flash('Valor do contrato inválido.', 'error')
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Erro ao atualizar contrato: {e}', 'error')
-        except KeyError as e:
-            flash(f'Campo obrigatório ausente: {e}', 'error')
+    # Este bloco só é executado se o formulário for submetido (POST) 
+    # E os validadores Flask-WTF forem passados (validate_on_submit())
+    if form.validate_on_submit():
+        try:
+            # Lógica específica para o valor_contrato (conversão de string para float)
+            valor_contrato_str = form.valor_contrato.data
+            if valor_contrato_str: # Apenas tente converter se houver valor
+                try:
+                    # Remover pontos de milhar e substituir vírgula por ponto decimal
+                    contrato.valor_contrato = float(valor_contrato_str.replace('.', '').replace(',', '.'))
+                except ValueError:
+                    flash('Formato de valor do contrato inválido. Use o formato 1.234,56', 'danger')
+                    # Se a conversão do valor falhar, retorna para a página de edição com o formulário
+                    return render_template('editar.html', form=form, contrato=contrato)
+            else:
+                contrato.valor_contrato = 0.0 # Define um valor padrão se estiver vazio
+
+
+            # --- ATUALIZAÇÃO DE TODOS OS OUTROS CAMPOS DO CONTRATO ---
+            # O form.populate_obj(contrato) faria isso automaticamente para todos os campos mapeados,
+            # mas se você está fazendo manualmente, precisa incluir todos:
+            contrato.nome = form.nome.data
+            contrato.cnpj = form.cnpj.data
+            contrato.endereco = form.endereco.data
+            contrato.cep = form.cep.data
+            contrato.estado = form.estado.data
+            contrato.telefone = form.telefone.data
+            contrato.email = form.email.data
+            # As datas já devem vir como objetos date/datetime se o DateField estiver correto no formulário
+            contrato.inicio_contrato = form.inicio_contrato.data 
+            contrato.termino_contrato = form.termino_contrato.data
+            contrato.abrangencia_contrato = form.abrangencia_contrato.data
+            contrato.tipo_indice = form.tipo_indice.data # <<< ESTA LINHA É CRÍTICA PARA SALVAR O TIPO DE ÍNDICE
+            
+            # --- UM ÚNICO BLOCO TRY/EXCEPT PARA O COMMIT NO BANCO DE DADOS ---
+            db.session.commit() # Tenta salvar as alterações no banco de dados
+            flash('Contrato atualizado com sucesso!', 'success')
+            return redirect(url_for('index')) # Redireciona para a página principal após o sucesso
+
         except Exception as e:
-            flash(f'Ocorreu um erro ao processar o formulário: {e}', 'error')
-    return render_template('edit.html', contrato=contrato)
+            db.session.rollback() # Desfaz a transação em caso de erro no banco
+            flash(f'Erro ao salvar as alterações no banco de dados: {e}', 'danger')
+            # Retorna para o formulário com o erro (mantém os dados preenchidos)
+            return render_template('editar.html', form=form, contrato=contrato)
+    
+            # Atualiza os outros campos (use form.FIELD.data)
+    contrato.nome = form.nome.data
+    contrato.cnpj = form.cnpj.data
+    contrato.endereco = form.endereco.data
+    contrato.cep = form.cep.data
+    contrato.estado = form.estado.data
+    contrato.telefone = form.telefone.data
+    contrato.email = form.email.data
+        # As datas já devem vir como objetos date/datetime se o formato do DateField estiver correto e o banco não as converter para string
+    contrato.inicio_contrato = form.inicio_contrato.data 
+    contrato.termino_contrato = form.termino_contrato.data
+    contrato.abrangencia_contrato = form.abrangencia_contrato.data
+    contrato.tipo_indice = form.tipo_indice.data
+        
+    try:
+            db.session.commit()
+            flash('Contrato atualizado com sucesso!', 'success')
+            return redirect(url_for('index'))
+    except Exception as e:
+            db.session.rollback() # Em caso de erro ao commitar no DB, desfaz a transação
+            flash(f'Erro ao salvar as alterações no banco de dados: {e}', 'danger')
+            # Retorna para o formulário com o erro
+            return render_template('editar.html', form=form, contrato=contrato)
+    
+    # Este bloco é executado quando a requisição é GET (carregando a página de edição pela primeira vez)
+    # ou se form.validate_on_submit() retornar False por algum motivo (ex: campos DataRequired vazios)
+    return render_template('editar.html', form=form, contrato=contrato)
 
 
 @app.route('/search', methods=['POST'])
 @login_required
 def search():
-    query = request.form.get('query', '')
-    try:
-        contratos = ContratCond.query.filter(ContratCond.nome.ilike(f'%{query}%')).all()
-        return render_template('index.html', contratos=contratos)
-    except Exception as e:
-        flash(f'Erro ao realizar a busca: {e}', 'error')
-    return render_template('index.html', contratos=[])
+    form = ContratoForm() # <--- INSTANCIE O FORMULÁRIO AQUI TAMBÉM
+    query = request.form.get('query')
+    page = request.args.get('page', 1, type=int)
+    per_page = 5
+
+    search_results = ContratCond.query.filter(
+        (ContratCond.nome.ilike(f'%{query}%')) | 
+        (ContratCond.cnpj.ilike(f'%{query}%'))
+    ).order_by(ContratCond.created.desc()).paginate(page=page, per_page=per_page)
+    
+    # Passe a query de busca de volta para o template para manter o valor no campo de busca
+    return render_template('index.html', contratos=search_results, search_query=query, mostrar_apenas_ultimos=False, form=form) # <--- PASSE O FORMULÁRIO AQUI
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -228,60 +376,77 @@ with app.app_context():
     except Exception as e:
         print(f"Erro ao criar tabelas na inicialização: {e}")
 
+# Certifique-se de que as importações listadas no Passo 1 estão no topo do arquivo.
+
 @app.route('/pdf/<int:id>')
 @login_required
 def generate_pdf(id):
     contrato = ContratCond.query.get_or_404(id)
+
     try:
         output = BytesIO()
-        # Definir margens em cm e converter para pontos
+        
+        # Definir margens e tamanho da página
         margem_superior = 2 * cm
         margem_inferior = 2 * cm
         margem_esquerda = 2 * cm
         margem_direita = 2 * cm
-        page_width, page_height = letter
+        page_width, page_height = letter # Letter: 8.5 x 11 polegadas
 
+        # Cria o objeto Canvas
         p = canvas.Canvas(output, pagesize=letter)
-
+        
+        # --- Configuração dos Estilos de Parágrafo ---
+        # Certifique-se de que as fontes 'Arial' e 'Arial-Bold' foram registradas com sucesso.
         styles = getSampleStyleSheet()
-        normal_style = ParagraphStyle(
-            name='Normal',
+        
+        # Estilo Base
+        base_style = ParagraphStyle(
+            name='Base',
             fontName='Arial',
             fontSize=12,
-            leading=1.5 * 12, # Espaçamento entre linhas de 1.5
+            leading=14, # Espaçamento entre linhas
             alignment=TA_LEFT,
-            spaceAfter=0.2 * cm # Adicionar espaço após cada parágrafo
         )
+
+        # Estilos específicos
+        normal_style = base_style
+        
         bold_style = ParagraphStyle(
             name='BoldStyle',
             parent=normal_style,
             fontName='Arial-Bold'
         )
+        
         centered_style = ParagraphStyle(
             name='Centered',
             parent=normal_style,
             alignment=TA_CENTER,
-            fontName='Arial' # Usar Arial normal para centralizado
+            fontName='Arial'
         )
+        
         centered_bold_style = ParagraphStyle(
             name='CenteredBold',
             parent=centered_style,
             fontName='Arial-Bold',
             fontSize=15,
-            spaceAfter=0.05 * cm # Reduzir ainda mais o espaço abaixo do título da empresa
+            spaceAfter=0.05 * cm # Espaço após o título da empresa
         )
+        
         cnpj_style = ParagraphStyle(
             name='CNPJStyle',
             parent=centered_style,
             fontSize=10,
-            spaceAfter=0.4 * cm # Reduzir um pouco o espaço abaixo do CNPJ
+            spaceAfter=0.4 * cm # Espaço após o CNPJ
         )
+        
         footer_style = ParagraphStyle(
             name='Footer',
             fontName='Arial',
-            fontSize=10,
+            fontSize=8, # Reduzido para caber bem no rodapé
             alignment=TA_CENTER
         )
+        
         section_title_style = ParagraphStyle(
             name='SectionTitle',
             parent=centered_style,
@@ -289,195 +454,322 @@ def generate_pdf(id):
             fontSize=14,
             spaceAfter=0.5 * cm
         )
+        
+        right_aligned_style = ParagraphStyle(
+            name='RightAligned',
+            parent=normal_style,
+            alignment=TA_RIGHT,
+            spaceAfter=0.5 * cm # Espaço após o bloco de local/data
+        )
 
-        # --- Cabeçalho ---
-        logo_path = os.path.join(app.root_path, 'static', 'logo.png')
+        # --- Variáveis de Posicionamento ---
+        # Posição Y inicial para desenhar conteúdo, considerando a margem superior
+        current_y = page_height - margem_superior
+
+        # Largura da área de conteúdo (excluindo margens laterais)
+        content_width = page_width - margem_esquerda - margem_direita
+
+        # --- Cabeçalho da Página (Logo e Informações da Empresa) ---
+        logo_path = os.path.join(app.root_path, 'static', 'logo.png') # Caminho do logo
         logo_width = 3.5 * cm # Largura desejada para o logo
         logo_height = 0 # Inicializado, será calculado pela proporção
-        
-        # Posição Y para o topo da área do cabeçalho
-        header_top_y = page_height - margem_superior
-        
-        # Variável para rastrear a posição Y mais baixa ocupada pelo cabeçalho
-        lowest_header_element_y = header_top_y # Começa no topo e desce
 
-        # 1. Tentar carregar e posicionar o logo
-        logo_x = margem_esquerda
-        logo_y = header_top_y # Posição inicial para o logo (será ajustada após calcular a altura)
-
+        # Tenta carregar e posicionar o logo
         try:
             img = PIL_Image.open(logo_path)
             img_width_orig, img_height_orig = img.size
             aspect_ratio = img_height_orig / img_width_orig
             logo_height = logo_width * aspect_ratio
 
-            logo_y = header_top_y - logo_height # Posição Y do canto inferior esquerdo do logo
-            logo = Image(logo_path, width=logo_width, height=logo_height)
-            logo.drawOn(p, logo_x, logo_y)
-            lowest_header_element_y = min(lowest_header_element_y, logo_y) # Atualiza a posição mais baixa
+            logo_x = margem_esquerda # Posição X do logo
+            logo_y = current_y - logo_height # Posição Y do canto inferior esquerdo do logo
+
+            logo_obj = Image(logo_path, width=logo_width, height=logo_height)
+            logo_obj.drawOn(p, logo_x, logo_y)
+            
+            # Atualiza a posição Y atual para abaixo do logo (ou do topo da margem se não tiver logo)
+            current_y = min(current_y, logo_y) # Pega a menor Y ocupada pelo logo
         except FileNotFoundError:
             print(f"Erro: Logo não encontrado em {logo_path}")
             logo_height = 0 # Se o logo não existe, sua altura é 0 para o layout
-            # Se não houver logo, o texto começará na margem esquerda sem deslocamento do logo.
-
-        # 2. Preparar e posicionar o texto (Nome da Empresa e CNPJ)
-        # Para centralizar no cabeçalho inteiro, a área de texto começa na margem esquerda e vai até a margem direita.
-        text_area_x_start_full_width = margem_esquerda
-        text_area_width_full_width = page_width - margem_esquerda - margem_direita
-
+        
+        # Informações da Empresa (centralizadas verticalmente com o logo ou no topo se sem logo)
         empresa_nome_para = Paragraph("M.A. Automatização", centered_bold_style)
         cnpj_para = Paragraph("CNPJ: 27.857.310/0001-83", centered_style)
 
-        # Medir a altura dos parágrafos de texto (usando a largura total do cabeçalho)
-        _, empresa_nome_height = empresa_nome_para.wrapOn(p, text_area_width_full_width, page_height)
-        _, cnpj_height = cnpj_para.wrapOn(p, text_area_width_full_width, page_height)
+        # Calcula a altura total do bloco de texto da empresa
+        _, empresa_nome_h = empresa_nome_para.wrapOn(p, content_width, page_height)
+        _, cnpj_h = cnpj_para.wrapOn(p, content_width, page_height)
+        total_text_h = empresa_nome_h + cnpj_h + 0.2 * cm # Espaço entre nome e CNPJ
 
-        text_block_gap = 0.2 * cm # Espaço entre o nome da empresa e o CNPJ
-        total_text_block_height = empresa_nome_height + cnpj_height + text_block_gap
-
-        # Calcular a posição vertical para centralizar o bloco de texto com a altura do logo
+        # Se houver logo, centraliza o texto da empresa com a altura do logo
         if logo_height > 0:
-            # Centro Y do logo
-            logo_center_y = logo_y + (logo_height / 2)
-            # Topo Y do bloco de texto para centralizá-lo com o logo
-            text_block_top_y = logo_center_y + (total_text_block_height / 2)
+            text_block_start_y = (current_y + logo_height / 2) + total_text_h / 2
         else:
-            # Se não há logo, simplesmente posicione o texto a partir da margem superior
-            text_block_top_y = header_top_y # Usar header_top_y, que é page_height - margem_superior
+            text_block_start_y = page_height - margem_superior # Sem logo, começa do topo
 
-        # Posição Y do nome da empresa
-        empresa_nome_y = text_block_top_y - empresa_nome_height
-        # Posição Y do CNPJ (abaixo do nome da empresa)
-        cnpj_y = empresa_nome_y - cnpj_height - text_block_gap
+        empresa_name_y = text_block_start_y - empresa_nome_h
+        cnpj_y = empresa_name_y - cnpj_h - 0.2 * cm # Espaço entre
 
-        # Calcular posição X para centralizar o texto dentro da área de texto *total* do cabeçalho
-        empresa_nome_x = text_area_x_start_full_width + (text_area_width_full_width - empresa_nome_para.wrapOn(p, text_area_width_full_width, page_height)[0]) / 2
-        cnpj_x = text_area_x_start_full_width + (text_area_width_full_width - cnpj_para.wrapOn(p, text_area_width_full_width, page_height)[0]) / 2
+        # Desenha o texto da empresa, centralizado horizontalmente na área de conteúdo
+        # Certifique-se de desempacotar corretamente aqui também
+        empresa_nome_width, _ = empresa_nome_para.wrapOn(p, content_width, page_height)
+        cnpj_width, _ = cnpj_para.wrapOn(p, content_width, page_height)
 
-        # Desenhar os parágrafos de texto
-        empresa_nome_para.drawOn(p, empresa_nome_x, empresa_nome_y)
-        cnpj_para.drawOn(p, cnpj_x, cnpj_y)
+        empresa_nome_para.drawOn(p, margem_esquerda + (content_width - empresa_nome_width) / 2, empresa_name_y)
+        cnpj_para.drawOn(p, margem_esquerda + (content_width - cnpj_width) / 2, cnpj_y)
 
-        # 3. Desenhar a linha divisória do cabeçalho
-        calculated_lowest_text_y = cnpj_y - cnpj_height # Fundo do CNPJ
+        # Atualiza o current_y para o ponto mais baixo do cabeçalho
+        current_y = min(current_y, cnpj_y) 
         
-        # Considera o menor ponto entre o logo e o texto para a linha
-        line_y_position = min(lowest_header_element_y, calculated_lowest_text_y) - 0.5 * cm # 0.5 cm de espaço após o cabeçalho
+        # Linha divisória do cabeçalho
+        line_y = current_y - 0.5 * cm # 0.5 cm abaixo do elemento mais baixo do cabeçalho
+        p.line(margem_esquerda, line_y, page_width - margem_direita, line_y)
+        current_y = line_y - 0.5 * cm # Posição Y para o próximo conteúdo
 
-        # A linha deve ir de margem_esquerda a margem_direita
-        p.line(margem_esquerda, line_y_position, page_width - margem_direita, line_y_position)
+        # --- Corpo do Contrato ---
+        # Título "Informações do Contrato"
+        section_title_para = Paragraph("Informações do Contrato", section_title_style)
+        # Desempacotar corretamente aqui
+        section_title_width, section_title_h = section_title_para.wrapOn(p, content_width, page_height)
+        section_title_para.drawOn(p, margem_esquerda + (content_width - section_title_width) / 2, current_y - section_title_h)
+        current_y -= section_title_h + 1 * cm # 1 cm de espaço após o título da seção
 
-        # --- Fim do Cabeçalho ---
-
-        # 4. Inserir "Informações do Contrato" centralizado
-        # Definir a largura total de texto utilizável para o corpo do contrato
-        texto_width = page_width - margem_esquerda - margem_direita
+        # Local e Data Alinhados à Direita
+        data_atual = datetime.now()
+        meses = {
+            1: 'janeiro', 2: 'fevereiro', 3: 'março', 4: 'abril',
+            5: 'maio', 6: 'junho', 7: 'julho', 8: 'agosto',
+            9: 'setembro', 10: 'outubro', 11: 'novembro', 12: 'dezembro'
+        }
+        data_formatada = f"São Paulo, {data_atual.day} de {meses.get(data_atual.month, '')} de {data_atual.year}"
+        local_data_para = Paragraph(data_formatada, right_aligned_style)
         
-        section_title = Paragraph("Informações do Contrato", section_title_style)
-        section_title_width, section_title_height = section_title.wrapOn(p, texto_width, page_height)
-        section_title_x = margem_esquerda + (texto_width - section_title_width) / 2
+        # OBTENHA LARGURA E ALTURA AQUI (já corrigido, mas reconfirmando)
+        local_data_width, local_data_h = local_data_para.wrapOn(p, content_width, page_height)
         
-        # Posição Y para o título da seção, logo abaixo da linha do cabeçalho
-        y_position = line_y_position - 0.5 * cm # 0.5 cm de espaço após a linha do cabeçalho
-        section_title.drawOn(p, section_title_x, y_position - section_title_height)
-        y_position -= section_title_height + 0.5 * cm # Ajusta y_position para o conteúdo abaixo
+        # Use local_data_width para a posição X
+        local_data_para.drawOn(p, page_width - margem_direita - local_data_width, current_y - local_data_h) 
+        current_y -= local_data_h + 0.5 * cm # Espaço após data
 
-        # --- Conteúdo do contrato (continua aqui, usando a nova y_position) ---
-        conteudo_formatado = [
-            Paragraph(f"<b>Nome:</b> {contrato.nome}", bold_style),
-            Paragraph(f"<b>CNPJ:</b> {contrato.cnpj}", bold_style),
-            Paragraph(f"<b>Endereço:</b> {contrato.endereco}", bold_style),
-            Paragraph(f"<b>CEP:</b> {contrato.cep}", bold_style),
-            Paragraph(f"<b>Estado:</b> {contrato.estado}", bold_style),
-            Paragraph(f"<b>Telefone:</b> {contrato.telefone}", bold_style),
-            Paragraph(f"<b>Email:</b> {contrato.email}", bold_style),
-            Paragraph(f"<b>Valor do Contrato:</b> R$ {contrato.valor_contrato:.2f}", bold_style),
-            Paragraph(f"<b>Início do Contrato:</b> {contrato.inicio_contrato}", bold_style),
-            Paragraph(f"<b>Término do Contrato:</b> {contrato.termino_contrato if contrato.termino_contrato else 'Não definido'}", bold_style),
-            Paragraph(f"<b>Abrangência do Contrato:</b> {contrato.abrangencia_contrato}", bold_style),
+        # Detalhes do Contrato
+        # Formatação do valor do contrato
+        valor_formatado_br = "R$ {:,.2f}".format(contrato.valor_contrato).replace(",", "X").replace(".", ",").replace("X", ".")
+
+        # Formatação do tipo de índice
+        tipo_indice_do_banco = contrato.tipo_indice
+        indice_para_exibir = "Não Informado"
+        if tipo_indice_do_banco:
+            valor_normalizado = tipo_indice_do_banco.strip().upper()
+            if valor_normalizado == 'IPCA':
+                indice_para_exibir = 'IPCA (Índice Nacional de Preços ao Consumidor Amplo)'
+            elif valor_normalizado == 'IGPM':
+                indice_para_exibir = 'IGPM (Índice Geral de Preços do Mercado)'
+            else:
+                indice_para_exibir = f"{tipo_indice_do_banco} (Outro Índice)"
+
+        # Formatação das datas
+        data_inicio_obj = None 
+        if isinstance(contrato.inicio_contrato, str):
+            try:
+                data_inicio_obj = datetime.strptime(contrato.inicio_contrato, '%Y-%m-%d').date()
+            except ValueError:
+                data_inicio_obj = None 
+        else:
+            data_inicio_obj = contrato.inicio_contrato
+
+        inicio_contrato_str = data_inicio_obj.strftime('%d/%m/%Y') if data_inicio_obj else 'Data de Início Inválida'
+
+        data_termino_obj = None
+        if contrato.termino_contrato:
+            if isinstance(contrato.termino_contrato, str):
+                try:
+                    data_termino_obj = datetime.strptime(contrato.termino_contrato, '%Y-%m-%d').date()
+                except ValueError:
+                    data_termino_obj = None
+            else:
+                data_termino_obj = contrato.termino_contrato
+
+        termino_contrato_str = data_termino_obj.strftime('%d/%m/%Y') if data_termino_obj else 'Não definido'
+
+
+        contrato_details = [
+            f"<b>Nome:</b> {contrato.nome}",
+            f"<b>CNPJ:</b> {contrato.cnpj}",
+            f"<b>Endereço:</b> {contrato.endereco}",
+            f"<b>CEP:</b> {contrato.cep}",
+            f"<b>Estado:</b> {contrato.estado}",
+            f"<b>Telefone:</b> {contrato.telefone}",
+            f"<b>Email:</b> {contrato.email}",
+            f"<b>Valor do Contrato:</b> {valor_formatado_br}",
+            f"<b>Início do Contrato:</b> {inicio_contrato_str}",
+            f"<b>Término do Contrato:</b> {termino_contrato_str}",
+            f"<b>Abrangência do Contrato:</b> {contrato.abrangencia_contrato}",
+            f"<b>Tipo de Índice de Reajuste:</b> {indice_para_exibir}",
         ]
 
-        x_position = margem_esquerda
-        for item in conteudo_formatado:
-            item_width, item_height = item.wrapOn(p, texto_width, page_height)
-            # Verificar se há espaço suficiente para o próximo item
-            if y_position - item_height - 0.2 * cm < margem_inferior + 2*cm: # Ajuste de 2cm para não sobrepor o rodapé e a linha de assinatura
-                p.showPage() # Adiciona nova página
-                # Se desejar repetir o cabeçalho na nova página, você precisaria de uma função separada para desenhá-lo aqui.
-                # Por simplicidade, apenas reiniciamos o y_position para o topo.
-                y_position = page_height - margem_superior # Reinicia Y no topo da nova página
+        # Desenha os detalhes do contrato, verificando quebra de página
+        for detail_text in contrato_details:
+            para = Paragraph(detail_text, bold_style)
+            # Desempacotar corretamente aqui
+            _, para_h = para.wrapOn(p, content_width, page_height)
             
-            item.drawOn(p, x_position, y_position - item_height)
-            y_position -= item_height + 0.2 * cm # Adiciona um pequeno espaço entre os itens
+            # Se o próximo parágrafo não couber, inicia uma nova página
+            if current_y - para_h - 0.2 * cm < margem_inferior + (4 * cm): # 4 cm para o rodapé e assinaturas
+                p.showPage()
+                current_y = page_height - margem_superior 
+                
+            para.drawOn(p, margem_esquerda, current_y - para_h)
+            current_y -= (para_h + 0.2 * cm) # Desce a posição Y para o próximo parágrafo
 
-        # --- NOVAS SEÇÕES: ACORDO E ASSINATURAS ---
+        # --- Seção de Acordo e Assinaturas ---
+        # Garante que as assinaturas tenham espaço suficiente
+        # Ajustei o cálculo para considerar o novo layout das assinaturas
+        # 2cm para o acordo, 0.5cm para a linha, 0.5cm para o nome, 0.5cm para a label + margem
+        if current_y - (2 * cm + 0.5 * cm + 0.5 * cm + 0.5 * cm + margem_inferior) < margem_inferior:
+            p.showPage()
+            current_y = page_height - margem_superior
 
-        # Definir novos estilos para o texto de acordo e rótulos de assinatura
-        agreement_style = ParagraphStyle(
-            name='AgreementText',
-            parent=normal_style,
-            fontSize=10,
-            alignment=TA_LEFT, # <<-- ALTERADO PARA TA_LEFT
-            spaceAfter=0.5 * cm # Espaço após o texto de acordo
-        )
-        signature_label_style = ParagraphStyle(
-            name='SignatureLabel',
-            parent=normal_style,
-            fontSize=10,
-            alignment=TA_CENTER,
-        )
+        agreement_para = Paragraph("Li e concordo com os termos do contrato.", normal_style)
+        _, agreement_h = agreement_para.wrapOn(p, content_width, page_height)
+        agreement_para.drawOn(p, margem_esquerda, current_y - agreement_h - 1 * cm) # 1cm abaixo do último item
+        current_y -= (agreement_h + 1 * cm)
 
-        # ADICIONE AQUI O CÓDIGO PARA O RODAPÉ (ANTES DAS ASSINATURAS)
-        footer_text_content = "M.A. Automatização - "
-        footer_text_content += f"{contrato.endereco}, {contrato.cep}, {contrato.estado} | Telefone: {contrato.telefone} | Email: {contrato.email}"
-        footer_text = Paragraph(footer_text_content, footer_style)
-        footer_width, footer_height = footer_text.wrapOn(p, texto_width, page_height)
-        footer_x = margem_esquerda + (texto_width - footer_width) / 2
-        footer_y = margem_inferior
-
-
-        # Calcular a posição para o topo do rodapé (considerando que o rodapé já foi definido)
-        y_footer_top = footer_y + footer_height
-
-        # Posição inicial para a seção de assinaturas (acima do rodapé)
-        y_signatures_start = y_footer_top + 4 * cm # 4 cm acima do rodapé (ajuste conforme necessário)
-
-        # Texto "Li e concordo com os termos do contrato."
-        agreement_paragraph = Paragraph("Li e concordo com os termos do contrato.", agreement_style)
-        agreement_width, agreement_height = agreement_paragraph.wrapOn(p, texto_width, page_height)
-        agreement_x = margem_esquerda # <<-- ALTERADO PARA ALINHAR À ESQUERDA
-        agreement_paragraph.drawOn(p, agreement_x, y_signatures_start)
-
-        # Posição para as linhas de assinatura (abaixo do texto de acordo)
-        y_line_position_signature = y_signatures_start - agreement_height - 1.5 * cm # 1.5 cm abaixo do texto de acordo
+        # Posição Y para as linhas de assinatura (abaixo do texto de acordo)
+        y_line_position_signature = current_y - 2 * cm # 2 cm abaixo do texto de acordo (esta é a Y da linha)
 
         # Largura da linha de assinatura
         signature_line_length = 6 * cm # 6 cm para cada linha
 
-        # Assinatura Empresa (Esquerda)
-        x_empresa_line = margem_esquerda + (texto_width / 4) - (signature_line_length / 2)
-        p.line(x_empresa_line, y_line_position_signature, x_empresa_line + signature_line_length, y_line_position_signature)
-        empresa_label = Paragraph("Assinatura Empresa", signature_label_style)
-        empresa_label_width, empresa_label_height = empresa_label.wrapOn(p, signature_line_length, page_height)
-        empresa_label.drawOn(p, x_empresa_line + (signature_line_length - empresa_label_width) / 2, y_line_position_signature - empresa_label_height - 0.2 * cm)
+        # Espaçamento para o texto abaixo da linha
+        gap_below_line = 0.2 * cm # Espaço entre a linha e o texto abaixo dela
 
-        # Assinatura Contratante (Direita)
-        x_contratante_line = margem_esquerda + (texto_width * 3 / 4) - (signature_line_length / 2)
-        p.line(x_contratante_line, y_line_position_signature, x_contratante_line + signature_line_length, y_line_position_signature)
-        contratante_label = Paragraph(f"Assinatura Contratante", signature_label_style)
-        contratante_label_width, contratante_label_height = contratante_label.wrapOn(p, signature_line_length, page_height)
-        contratante_label.drawOn(p, x_contratante_line + (signature_line_length - contratante_label_width) / 2, y_line_position_signature - contratante_label_height - 0.2 * cm)
+        # --- Assinatura Empresa (Esquerda) ---
+        x_empresa_line_start = margem_esquerda + (content_width / 4) - (signature_line_length / 2) # X inicial da linha
+        p.line(x_empresa_line_start, y_line_position_signature, x_empresa_line_start + signature_line_length, y_line_position_signature)
+        
+        # Texto "Assinatura Empresa"
+        empresa_label_text = "Assinatura Empresa"
+        empresa_label_para = Paragraph(empresa_label_text, centered_style)
+        empresa_label_width, empresa_label_h = empresa_label_para.wrapOn(p, signature_line_length, page_height)
+        
+        # Posiciona "Assinatura Empresa" ABAIXO da linha de assinatura
+        empresa_label_x = x_empresa_line_start + (signature_line_length - empresa_label_width) / 2
+        empresa_label_y = y_line_position_signature - empresa_label_h - gap_below_line
+        
+        empresa_label_para.drawOn(p, empresa_label_x, empresa_label_y)
 
-        # --- Rodapé (Centralizado, Arial tamanho 10, na margem inferior) ---
-        footer_text.drawOn(p, footer_x, footer_y)
+        # --- Assinatura Contratante (Direita) ---
+        x_contratante_line_start = margem_esquerda + (content_width * 3 / 4) - (signature_line_length / 2) # X inicial da linha
+        p.line(x_contratante_line_start, y_line_position_signature, x_contratante_line_start + signature_line_length, y_line_position_signature)
+        
+        # 1. Nome do Contratante (abaixo da linha)
+        contratante_nome_text = contrato.nome
+        contratante_nome_para = Paragraph(contratante_nome_text, centered_style)
+        contratante_nome_width, contratante_nome_h = contratante_nome_para.wrapOn(p, signature_line_length, page_height)
+        
+        # Posiciona o nome do contratante ABAIXO da linha de assinatura
+        contratante_nome_x = x_contratante_line_start + (signature_line_length - contratante_nome_width) / 2
+        contratante_nome_y = y_line_position_signature - contratante_nome_h - gap_below_line
+        
+        contratante_nome_para.drawOn(p, contratante_nome_x, contratante_nome_y)
 
+        # 2. Texto "Assinatura Contratante" (abaixo do nome)
+        contratante_label_text = "Assinatura Contratante"
+        contratante_label_para = Paragraph(contratante_label_text, centered_style)
+        contratante_label_width, contratante_label_h = contratante_label_para.wrapOn(p, signature_line_length, page_height)
+        
+        # Posiciona "Assinatura Contratante" ABAIXO do nome do contratante
+        contratante_label_x = x_contratante_line_start + (signature_line_length - contratante_label_width) / 2
+        contratante_label_y = contratante_nome_y - contratante_label_h - gap_below_line # Espaço abaixo do nome
+        
+        contratante_label_para.drawOn(p, contratante_label_x, contratante_label_y)
+
+        # --- Rodapé ---
+        # O rodapé deve ser desenhado na margem inferior da PÁGINA ATUAL, não dependendo de current_y
+        footer_text_content = f"M.A. Automatização - {contrato.endereco}, {contrato.cep}, {contrato.estado} | Telefone: {contrato.telefone} | Email: {contrato.email}"
+        footer_para = Paragraph(footer_text_content, footer_style)
+        
+        # Wrap do rodapé para obter a altura e largura (já estava correto, mas reconfirmando)
+        footer_width, footer_h = footer_para.wrapOn(p, content_width, page_height)
+        
+        # Calcula a posição X para centralizar o rodapé
+        footer_x_center = margem_esquerda + (content_width - footer_width) / 2 # Use footer_width
+        
+        # Desenha o rodapé na margem inferior
+        footer_para.drawOn(p, footer_x_center, margem_inferior - (0.5 * cm) ) # Um pouco acima da margem real para não cortar
+
+        # Finaliza e salva o PDF
+        p.showPage() # Garante que a última página seja finalizada
         p.save()
+
         output.seek(0)
-        return send_file(output, as_attachment=True, download_name=f"contrato_{contrato.id}.pdf", mimetype='application/pdf')
+        return send_file(output, as_attachment=True, download_name=f"contrato_{contrato.nome.replace(' ', '_')}.pdf", mimetype='application/pdf')
+
     except Exception as e:
-        print(f'Erro ao gerar PDF (ABNT) no try-except: {e}')
-        flash(f'Erro ao gerar PDF (ABNT): {e}', 'error')
+        print(f'Erro ao gerar o PDF: {e}') # Imprime para o console do servidor
+        flash(f'Erro ao gerar o PDF: {e}', 'danger')
         return redirect(url_for('index'))
+    
+@app.route('/download_contrato_pdf/<int:id>')
+@login_required
+def download_contrato_pdf(id):
+    contrato = ContratCond.query.get_or_404(id)
+
+    # 1. Criar um buffer em memória para o PDF
+    buffer = io.BytesIO()
+
+    # 2. Configurar o documento PDF
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    styles = getSampleStyleSheet()
+    story = []
+
+    # Estilo para o título
+    style_title = styles['h1']
+    style_title.alignment = TA_CENTER
+    style_title.fontName = 'Arial-Bold' # Usando a fonte registrada
+
+    # Estilo para o corpo do texto
+    style_body = styles['Normal']
+    style_body.fontName = 'Arial' # Usando a fonte registrada
+    style_body.fontSize = 12
+    style_body.leading = 14 # Espaçamento entre linhas
+
+    # 3. Adicionar conteúdo ao PDF usando os dados do contrato
+    story.append(Paragraph("TERMO DE CONTRATO DE SERVIÇOS", style_title))
+    story.append(Spacer(1, 0.2 * inch)) # Espaço
+
+    story.append(Paragraph(f"<b>NOME DO CONTRATANTE:</b> {contrato.nome}", style_body))
+    story.append(Paragraph(f"<b>CNPJ:</b> {contrato.cnpj}", style_body))
+    story.append(Paragraph(f"<b>ENDEREÇO:</b> {contrato.endereco}, CEP: {contrato.cep}", style_body))
+    story.append(Paragraph(f"<b>ESTADO:</b> {contrato.estado}", style_body))
+    story.append(Paragraph(f"<b>TELEFONE:</b> {contrato.telefone}", style_body))
+    story.append(Paragraph(f"<b>E-MAIL:</b> {contrato.email}", style_body))
+    story.append(Spacer(1, 0.2 * inch))
+
+    # Formatação do valor do contrato para exibição no PDF
+    # Certifique-se que contrato.valor_contrato é um Decimal ou float
+    valor_formatado = "R$ {:,.2f}".format(contrato.valor_contrato).replace(",", "X").replace(".", ",").replace("X", ".")
+    story.append(Paragraph(f"<b>VALOR DO CONTRATO:</b> {valor_formatado}", style_body))
+    story.append(Paragraph(f"<b>INÍCIO DO CONTRATO:</b> {contrato.inicio_contrato.strftime('%d/%m/%Y')}", style_body))
+    if contrato.termino_contrato: # Verifica se a data de término existe
+        story.append(Paragraph(f"<b>TÉRMINO DO CONTRATO:</b> {contrato.termino_contrato.strftime('%d/%m/%Y')}", style_body))
+    story.append(Paragraph(f"<b>ABRANGÊNCIA:</b> {contrato.abrangencia_contrato}", style_body))
+    story.append(Paragraph(f"<b>TIPO DE ÍNDICE DE REAJUSTE:</b> {contrato.tipo_indice}", style_body))
+    story.append(Spacer(1, 0.5 * inch))
+    story.append(Paragraph(f"Este contrato foi gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}", styles['Italic']))
+
+    # 4. Construir o PDF
+    try:
+        doc.build(story)
+        buffer.seek(0) # Volta o ponteiro para o início do buffer
+
+        # 5. Enviar o arquivo para o navegador
+        return send_file(buffer, as_attachment=True, download_name=f"contrato_{contrato.nome.replace(' ', '_')}.pdf", mimetype='application/pdf')
+    except Exception as e:
+        flash(f"Erro ao gerar o PDF: {e}", "danger")
+        # Se der erro, redireciona para a página de onde veio
+        return redirect(url_for('index')) # Ou para a página de detalhes do contrato
 
 
 @app.route('/delete/<int:id>', methods=['POST'])

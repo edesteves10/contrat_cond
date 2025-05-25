@@ -5,6 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <title>M.A. Automatização-Contratos - {% block title %}{% endblock %}</title>
+<style>
+    .navbar-brand {
+        font-size: 2.7em; /* Ajuste este valor. Experimente 1.2em, 1.8em, 2em, etc. */
+        font-weight: bold; /* Opcional: para dar mais destaque */
+    }
+    .nav-link {
+            font-size: 1.8em; /* Ajuste este valor, experimente 1.2em, 1.3em, etc. */
+            font-weight: bold; /* Opcional: para dar mais destaque */
+        }
+        .navbar {
+    background-color: #2596be!important; /* Exemplo: um cinza escuro. Use o código hexadecimal da cor que preferir */
+    /* Você pode usar nomes de cores como 'darkblue', 'purple', etc., ou códigos hexadecimais como '#FF5733' */
+}
+</style>
+</head>
 </head>
 <body>
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
@@ -16,7 +31,7 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav">
+            <ul class="navbar- ml-auto">
                 <li class="nav-item active">
                     <a class="nav-link" href="{{ url_for('clausulas') }}">Cláusulas de Contrato</a>
                 </li>
