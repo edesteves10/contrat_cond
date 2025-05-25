@@ -15,6 +15,7 @@ from reportlab.lib.units import inch, cm
 from PIL import Image as PIL_Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT # TA_LEFT já está aqui, vamos usar
+from reportlab.lib.fonts import addMapping
 from reportlab.platypus import Paragraph, Spacer, Image
 from reportlab.pdfbase import pdfmetrics as pdfmetrics_base
 from reportlab.pdfbase.ttfonts import TTFont
@@ -397,13 +398,13 @@ def generate_pdf(id):
         p = canvas.Canvas(output, pagesize=letter)
         
         # --- Configuração dos Estilos de Parágrafo ---
-        # Certifique-se de que as fontes 'Arial' e 'Arial-Bold' foram registradas com sucesso.
+        # As fontes 'Helvetica' e 'Helvetica-Bold' são padrão no ReportLab e funcionam no Heroku.
         styles = getSampleStyleSheet()
         
         # Estilo Base
         base_style = ParagraphStyle(
             name='Base',
-            fontName='Arial',
+            fontName='Helvetica', # Alterado de 'Arial' para 'Helvetica'
             fontSize=12,
             leading=14, # Espaçamento entre linhas
             alignment=TA_LEFT,
@@ -415,20 +416,20 @@ def generate_pdf(id):
         bold_style = ParagraphStyle(
             name='BoldStyle',
             parent=normal_style,
-            fontName='Arial-Bold'
+            fontName='Helvetica-Bold' # Alterado de 'Arial-Bold' para 'Helvetica-Bold'
         )
         
         centered_style = ParagraphStyle(
             name='Centered',
             parent=normal_style,
             alignment=TA_CENTER,
-            fontName='Arial'
+            fontName='Helvetica' # Alterado de 'Arial' para 'Helvetica'
         )
         
         centered_bold_style = ParagraphStyle(
             name='CenteredBold',
             parent=centered_style,
-            fontName='Arial-Bold',
+            fontName='Helvetica-Bold', # Alterado de 'Arial-Bold' para 'Helvetica-Bold'
             fontSize=15,
             spaceAfter=0.05 * cm # Espaço após o título da empresa
         )
@@ -442,7 +443,8 @@ def generate_pdf(id):
         
         footer_style = ParagraphStyle(
             name='Footer',
-            fontName='Arial',
+            parent=normal_style, # Usar normal_style como pai para herdar fontName
+            fontName='Helvetica', # Alterado de 'Arial' para 'Helvetica'
             fontSize=8, # Reduzido para caber bem no rodapé
             alignment=TA_CENTER
         )
@@ -450,7 +452,7 @@ def generate_pdf(id):
         section_title_style = ParagraphStyle(
             name='SectionTitle',
             parent=centered_style,
-            fontName='Arial-Bold',
+            fontName='Helvetica-Bold', # Alterado de 'Arial-Bold' para 'Helvetica-Bold'
             fontSize=14,
             spaceAfter=0.5 * cm
         )
@@ -459,6 +461,7 @@ def generate_pdf(id):
             name='RightAligned',
             parent=normal_style,
             alignment=TA_RIGHT,
+            fontName='Helvetica', # Alterado de 'Arial' para 'Helvetica'
             spaceAfter=0.5 * cm # Espaço após o bloco de local/data
         )
 
@@ -512,7 +515,6 @@ def generate_pdf(id):
         cnpj_y = empresa_name_y - cnpj_h - 0.2 * cm # Espaço entre
 
         # Desenha o texto da empresa, centralizado horizontalmente na área de conteúdo
-        # Certifique-se de desempacotar corretamente aqui também
         empresa_nome_width, _ = empresa_nome_para.wrapOn(p, content_width, page_height)
         cnpj_width, _ = cnpj_para.wrapOn(p, content_width, page_height)
 
@@ -530,7 +532,6 @@ def generate_pdf(id):
         # --- Corpo do Contrato ---
         # Título "Informações do Contrato"
         section_title_para = Paragraph("Informações do Contrato", section_title_style)
-        # Desempacotar corretamente aqui
         section_title_width, section_title_h = section_title_para.wrapOn(p, content_width, page_height)
         section_title_para.drawOn(p, margem_esquerda + (content_width - section_title_width) / 2, current_y - section_title_h)
         current_y -= section_title_h + 1 * cm # 1 cm de espaço após o título da seção
@@ -545,18 +546,14 @@ def generate_pdf(id):
         data_formatada = f"São Paulo, {data_atual.day} de {meses.get(data_atual.month, '')} de {data_atual.year}"
         local_data_para = Paragraph(data_formatada, right_aligned_style)
         
-        # OBTENHA LARGURA E ALTURA AQUI (já corrigido, mas reconfirmando)
         local_data_width, local_data_h = local_data_para.wrapOn(p, content_width, page_height)
         
-        # Use local_data_width para a posição X
         local_data_para.drawOn(p, page_width - margem_direita - local_data_width, current_y - local_data_h) 
         current_y -= local_data_h + 0.5 * cm # Espaço após data
 
         # Detalhes do Contrato
-        # Formatação do valor do contrato
         valor_formatado_br = "R$ {:,.2f}".format(contrato.valor_contrato).replace(",", "X").replace(".", ",").replace("X", ".")
 
-        # Formatação do tipo de índice
         tipo_indice_do_banco = contrato.tipo_indice
         indice_para_exibir = "Não Informado"
         if tipo_indice_do_banco:
@@ -568,7 +565,6 @@ def generate_pdf(id):
             else:
                 indice_para_exibir = f"{tipo_indice_do_banco} (Outro Índice)"
 
-        # Formatação das datas
         data_inicio_obj = None 
         if isinstance(contrato.inicio_contrato, str):
             try:
@@ -611,10 +607,8 @@ def generate_pdf(id):
         # Desenha os detalhes do contrato, verificando quebra de página
         for detail_text in contrato_details:
             para = Paragraph(detail_text, bold_style)
-            # Desempacotar corretamente aqui
             _, para_h = para.wrapOn(p, content_width, page_height)
             
-            # Se o próximo parágrafo não couber, inicia uma nova página
             if current_y - para_h - 0.2 * cm < margem_inferior + (4 * cm): # 4 cm para o rodapé e assinaturas
                 p.showPage()
                 current_y = page_height - margem_superior 
@@ -624,43 +618,39 @@ def generate_pdf(id):
 
         # --- Seção de Acordo e Assinaturas ---
         # Garante que as assinaturas tenham espaço suficiente
-        # Ajustei o cálculo para considerar o novo layout das assinaturas
-        # 2cm para o acordo, 0.5cm para a linha, 0.5cm para o nome, 0.5cm para a label + margem
-        if current_y - (2 * cm + 0.5 * cm + 0.5 * cm + 0.5 * cm + margem_inferior) < margem_inferior:
+        if current_y - (2 * cm + 4 * cm + 2 * cm) < margem_inferior: 
             p.showPage()
             current_y = page_height - margem_superior
 
         agreement_para = Paragraph("Li e concordo com os termos do contrato.", normal_style)
         _, agreement_h = agreement_para.wrapOn(p, content_width, page_height)
-        agreement_para.drawOn(p, margem_esquerda, current_y - agreement_h - 1 * cm) # 1cm abaixo do último item
+        agreement_para.drawOn(p, margem_esquerda, current_y - agreement_h - 1 * cm) 
         current_y -= (agreement_h + 1 * cm)
 
         # Posição Y para as linhas de assinatura (abaixo do texto de acordo)
-        y_line_position_signature = current_y - 2 * cm # 2 cm abaixo do texto de acordo (esta é a Y da linha)
+        y_line_position_signature = current_y - 2 * cm 
 
         # Largura da linha de assinatura
-        signature_line_length = 6 * cm # 6 cm para cada linha
+        signature_line_length = 6 * cm 
 
         # Espaçamento para o texto abaixo da linha
-        gap_below_line = 0.2 * cm # Espaço entre a linha e o texto abaixo dela
+        gap_below_line = 0.2 * cm 
 
         # --- Assinatura Empresa (Esquerda) ---
-        x_empresa_line_start = margem_esquerda + (content_width / 4) - (signature_line_length / 2) # X inicial da linha
+        x_empresa_line_start = margem_esquerda + (content_width / 4) - (signature_line_length / 2) 
         p.line(x_empresa_line_start, y_line_position_signature, x_empresa_line_start + signature_line_length, y_line_position_signature)
         
-        # Texto "Assinatura Empresa"
         empresa_label_text = "Assinatura Empresa"
         empresa_label_para = Paragraph(empresa_label_text, centered_style)
         empresa_label_width, empresa_label_h = empresa_label_para.wrapOn(p, signature_line_length, page_height)
         
-        # Posiciona "Assinatura Empresa" ABAIXO da linha de assinatura
         empresa_label_x = x_empresa_line_start + (signature_line_length - empresa_label_width) / 2
         empresa_label_y = y_line_position_signature - empresa_label_h - gap_below_line
         
         empresa_label_para.drawOn(p, empresa_label_x, empresa_label_y)
 
         # --- Assinatura Contratante (Direita) ---
-        x_contratante_line_start = margem_esquerda + (content_width * 3 / 4) - (signature_line_length / 2) # X inicial da linha
+        x_contratante_line_start = margem_esquerda + (content_width * 3 / 4) - (signature_line_length / 2) 
         p.line(x_contratante_line_start, y_line_position_signature, x_contratante_line_start + signature_line_length, y_line_position_signature)
         
         # 1. Nome do Contratante (abaixo da linha)
@@ -668,7 +658,6 @@ def generate_pdf(id):
         contratante_nome_para = Paragraph(contratante_nome_text, centered_style)
         contratante_nome_width, contratante_nome_h = contratante_nome_para.wrapOn(p, signature_line_length, page_height)
         
-        # Posiciona o nome do contratante ABAIXO da linha de assinatura
         contratante_nome_x = x_contratante_line_start + (signature_line_length - contratante_nome_width) / 2
         contratante_nome_y = y_line_position_signature - contratante_nome_h - gap_below_line
         
@@ -679,9 +668,8 @@ def generate_pdf(id):
         contratante_label_para = Paragraph(contratante_label_text, centered_style)
         contratante_label_width, contratante_label_h = contratante_label_para.wrapOn(p, signature_line_length, page_height)
         
-        # Posiciona "Assinatura Contratante" ABAIXO do nome do contratante
         contratante_label_x = x_contratante_line_start + (signature_line_length - contratante_label_width) / 2
-        contratante_label_y = contratante_nome_y - contratante_label_h - gap_below_line # Espaço abaixo do nome
+        contratante_label_y = contratante_nome_y - contratante_label_h - gap_below_line 
         
         contratante_label_para.drawOn(p, contratante_label_x, contratante_label_y)
 
@@ -690,24 +678,21 @@ def generate_pdf(id):
         footer_text_content = f"M.A. Automatização - {contrato.endereco}, {contrato.cep}, {contrato.estado} | Telefone: {contrato.telefone} | Email: {contrato.email}"
         footer_para = Paragraph(footer_text_content, footer_style)
         
-        # Wrap do rodapé para obter a altura e largura (já estava correto, mas reconfirmando)
         footer_width, footer_h = footer_para.wrapOn(p, content_width, page_height)
         
-        # Calcula a posição X para centralizar o rodapé
-        footer_x_center = margem_esquerda + (content_width - footer_width) / 2 # Use footer_width
+        footer_x_center = margem_esquerda + (content_width - footer_width) / 2 
         
-        # Desenha o rodapé na margem inferior
-        footer_para.drawOn(p, footer_x_center, margem_inferior - (0.5 * cm) ) # Um pouco acima da margem real para não cortar
+        footer_para.drawOn(p, footer_x_center, margem_inferior - (0.5 * cm) ) 
 
         # Finaliza e salva o PDF
-        p.showPage() # Garante que a última página seja finalizada
+        p.showPage() 
         p.save()
 
         output.seek(0)
         return send_file(output, as_attachment=True, download_name=f"contrato_{contrato.nome.replace(' ', '_')}.pdf", mimetype='application/pdf')
 
     except Exception as e:
-        print(f'Erro ao gerar o PDF: {e}') # Imprime para o console do servidor
+        print(f'Erro ao gerar o PDF: {e}') 
         flash(f'Erro ao gerar o PDF: {e}', 'danger')
         return redirect(url_for('index'))
     
