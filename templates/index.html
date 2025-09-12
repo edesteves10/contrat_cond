@@ -315,3 +315,46 @@
 {# <-- FIM: LÓGICA DE EXIBIÇÃO CONDICIONAL E PAGINAÇÃO --> #}
 
 {% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cepInput = document.getElementById('cep');
+    const enderecoInput = document.getElementById('endereco');
+    const estadoInput = document.getElementById('estado');
+
+    if (cepInput) {
+        cepInput.addEventListener('blur', function() {
+            const cep = this.value.replace(/\D/g, '');
+
+            if (cep.length === 8) {
+                fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.erro) {
+                            // Combine logradouro, bairro, and localidade for a full address
+                            let fullAddress = [data.logradouro, data.bairro, data.localidade].filter(Boolean).join(', ');
+                            enderecoInput.value = fullAddress;
+                            estadoInput.value = data.uf;
+                        } else {
+                            alert('CEP não encontrado.');
+                            enderecoInput.value = '';
+                            estadoInput.value = '';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro ao buscar CEP:', error);
+                        alert('Não foi possível buscar o CEP. Verifique sua conexão.');
+                        enderecoInput.value = '';
+                        estadoInput.value = '';
+                    });
+            } else {
+                // Clear fields if CEP is invalid
+                enderecoInput.value = '';
+                estadoInput.value = '';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
