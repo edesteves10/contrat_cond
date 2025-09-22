@@ -34,6 +34,7 @@ class ContratoForm(FlaskForm):
     estado = StringField('Estado', validators=[DataRequired(), Length(max=50)])
     telefone = StringField('Telefone', validators=[DataRequired(), Length(max=20)])
     email = EmailField('Email', validators=[DataRequired(), Length(max=100)])
+    indice_reajuste = SelectField('Índice de Reajuste', choices=[('IPCA', 'IPCA'), ('IGPM', 'IGPM'), ('Nenhum', 'Nenhum')], default='IPCA')
 
     valor_contrato = DecimalField(
         'Valor do Contrato (R$)',
@@ -106,6 +107,7 @@ class ContratCond(db.Model):
     termino_contrato = db.Column(db.Date, nullable=True)
     abrangencia_contrato = db.Column(db.String(100), nullable=False)
     tipo_indice = db.Column(db.String(50), nullable=True)
+    data_criacao = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     
     # Exemplo de coluna de data de criação (opcional, mas boa prática)
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow) 

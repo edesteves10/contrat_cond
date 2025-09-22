@@ -4,26 +4,10 @@
 
 {% block content %}
 <style>
-    body {
-        font-size: 22px;
-    }
-
-    h1.page-title {
-        font-size: 2.5em;
-        margin-bottom: 0.8em;
-    }
-
-    h2 {
-        font-size: 1.8em;
-        margin-top: 1.5em;
-        margin-bottom: 0.5em;
-    }
-
-    label {
-        font-size: 1.2em;
-        display: block;
-        margin-bottom: 0.5em;
-    }
+    body { font-size: 22px; }
+    h1.page-title { font-size: 2.5em; margin-bottom: 0.8em; }
+    h2 { font-size: 1.8em; margin-top: 1.5em; margin-bottom: 0.5em; }
+    label { font-size: 1.2em; display: block; margin-bottom: 0.5em; }
 
     input[type="text"],
     input[type="email"],
@@ -35,36 +19,19 @@
         width: 100%;
         box-sizing: border-box;
     }
-
-    /* <-- CORREÇÃO AQUI: 'select' NÃO DEVE ESTAR ANINHADO DENTRO DE input[type="date"] --> */
-    select.form-control { /* Use .form-control para ser mais específico do Bootstrap */
-        font-size: 0.8em; /* A fonte do campo de seleção e, muitas vezes, das opções */
+    
+    select.form-control {
+        font-size: 1em;
         padding: 0.5em;
         margin-bottom: 1em;
         width: 100%;
         box-sizing: border-box;
     }
 
-    button[type="submit"] {
-        font-size: 1.1em;
-        padding: 0.7em 1.5em;
-    }
-
-    hr {
-        margin: 1em 0;
-    }
-
-    .table th {
-        font-size: 1.1em;
-        padding: 0.6em;
-        font-weight: bold;
-    }
-
-    .table td {
-        font-size: 1.1em;
-        padding: 0.6em;
-    }
-
+    button[type="submit"] { font-size: 1.1em; padding: 0.7em 1.5em; }
+    hr { margin: 1em 0; }
+    .table th { font-size: 1.1em; padding: 0.6em; font-weight: bold; }
+    .table td { font-size: 1.1em; padding: 0.6em; }
     .pagination a {
         font-size: 1em;
         padding: 0.5em 0.8em;
@@ -74,77 +41,69 @@
         color: #333;
         border-radius: 5px;
     }
-
-    .pagination .active a {
-        background-color: #007bff;
-        color: white;
-        border-color: #007bff;
-    }
-
-    nav a {
-        font-size: 1.2em;
-        margin-right: 1em;
-        text-decoration: none;
-        color: #333;
-    }
-
-    nav a:hover {
-        color: #007bff;
-    }
-
-    /* ESTILOS ATUALIZADOS PARA BOTÕES DE AÇÃO */
+    .pagination .active a { background-color: #007bff; color: white; border-color: #007bff; }
+    nav a { font-size: 1.2em; margin-right: 1em; text-decoration: none; color: #333; }
+    nav a:hover { color: #007bff; }
+    
     .table td:last-child {
         display: flex;
         flex-direction: row;
         flex-wrap: nowrap;
         gap: 5px;
         justify-content: flex-start;
-        align-items: center; /* Centraliza verticalmente, se a altura for definida, ele alinhará ao meio da célula */
-        min-width: 320px; /* Mantenha ou ajuste se necessário */
+        align-items: center;
+        min-width: 320px;
     }
-
     .btn-action {
-        width: 100px; /* Força uma largura fixa para todos os botões */
-        height: 32px; /* <-- NOVO: Força uma altura fixa para todos os botões (ajuste este valor) */
-        padding: 0; /* <-- NOVO: Reseta o padding para que line-height controle a altura do texto */
+        width: 100px;
+        height: 32px;
+        padding: 0;
         font-size: 0.9em;
-        line-height: 30px; /* <-- NOVO: Alinha verticalmente o texto dentro do botão com a altura fixa */
+        line-height: 30px;
         text-align: center;
         white-space: nowrap;
         box-sizing: border-box;
         text-decoration: none;
-        display: block; /* Essencial para que width e height funcionem corretamente */
+        display: block;
         margin: 0 !important;
         border-width: 1px !important;
     }
-
-    /* Estilo específico para o formulário do botão de exclusão */
-    .table td:last-child form {
-        display: contents; /* Mantém o formulário transparente para o layout flex */
-    }
-
-    /* Estilo específico para o botão de exclusão dentro do formulário */
-    /* Garante que o botão dentro do form se comporte exatamente como os links */
+    .table td:last-child form { display: contents; }
     .table td:last-child form button.btn-action {
         margin: 0 !important;
         border-width: 1px !important;
-        /* Reafirmar padding/line-height se necessário, mas as regras acima devem bastar */
-        padding: 0 !important; /* Reafirmar padding zero */
-        line-height: 30px !important; /* Reafirmar line-height */
+        padding: 0 !important;
+        line-height: 30px !important;
     }
-
-
-    /* Ajuste as cores específicas dos botões, se necessário, para consistência */
     .btn-warning { background-color: #ffc107; border-color: #ffc107; color: #212529; }
     .btn-info { background-color: #17a2b8; border-color: #17a2b8; }
     .btn-danger { background-color: #dc3545; border-color: #dc3545; }
 
+    
+    /* ... seus outros estilos ... */
+    .error-message {
+        color: #dc3545; /* Vermelho do Bootstrap 'danger' */
+        font-size: 1em;
+        font-weight: bold;
+        display: block; /* Garante que a mensagem apareça em uma nova linha */
+        margin-top: 5px;
+    }
+
+</style>
+
+<style>
+    .error-message {
+    color: #dc3545; /* Cor vermelha para erros */
+    font-size: 1em;
+    font-weight: bold;
+    display: block;
+    margin-top: 5px;
+}
 </style>
 
 <h1 class="page-title">Contratos</h1>
 <hr>
 
-{# Mensagens flash para feedback #}
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
         {% for category, message in messages %}
@@ -156,61 +115,75 @@
 {% endwith %}
 
 <h2>Novo Contrato</h2>
-<form method="POST" action="{{ url_for('index') }}">
-    {# Certifique-se de usar form.csrf_token para formulários WTForms #}
+<form method="POST">
     {{ form.csrf_token }} 
-
+    <div class="form-group">
+        {{ form.nome.label }}
+        {{ form.nome(class="form-control") }}
+        <span id="nome-error" class="error-message"></span>
+    </div>
+    <div class="form-group">
+        {{ form.cnpj.label }}
+        {{ form.cnpj(class="form-control") }}
+        <span id="cnpj-error" class="error-message"></span>
+    </div>
+    <div class="form-group">
+        {{ form.endereco.label }}
+        {{ form.endereco(class="form-control") }}
+        <span id="endereco-error" class="error-message"></span>
+    </div>
+    <div class="form-group">
+        {{ form.cep.label }}
+        {{ form.cep(class="form-control") }}
+        <span id="cep-error" class="error-message"></span>
+    </div>
+    <div class="form-group">
+        {{ form.estado.label }}
+        {{ form.estado(class="form-control") }}
+        <span id="estado-error" class="error-message"></span>
+    </div>
+    <div class="form-group">
+        {{ form.telefone.label }}
+        {{ form.telefone(class="form-control") }}
+        <span id="telefone-error" class="error-message"></span>
+    </div>
+    <div class="form-group">
+        {{ form.email.label }}
+        {{ form.email(class="form-control") }}
+        <span id="email-error" class="error-message"></span>
+    </div>
+    <div class="form-group">
+        {{ form.valor_contrato.label }}
+        {{ form.valor_contrato(class="form-control") }}
+        <span id="valor_contrato-error" class="error-message"></span>
+    </div>
+    <div class="form-group">
+        {{ form.inicio_contrato.label }}
+        {{ form.inicio_contrato(class="form-control") }}
+        <span id="inicio_contrato-error" class="error-message"></span>
+    </div>
+    <div class="form-group">
+        {{ form.termino_contrato.label }}
+        {{ form.termino_contrato(class="form-control") }}
+        <span id="termino_contrato-error" class="error-message"></span>
+    </div>
+    
+<form method="POST">
+    {{ form.csrf_token }} 
     <div class="form-group">
         {{ form.nome.label }}
         {{ form.nome(class="form-control") }}
     </div>
     <div class="form-group">
-        {{ form.cnpj.label }}
-        {{ form.cnpj(class="form-control") }}
-    </div>
-    <div class="form-group">
-        {{ form.endereco.label }}
-        {{ form.endereco(class="form-control") }}
-    </div>
-    <div class="form-group">
-        {{ form.cep.label }}
-        {{ form.cep(class="form-control") }}
-    </div>
-    <div class="form-group">
-        {{ form.estado.label }}
-        {{ form.estado(class="form-control") }}
-    </div>
-    <div class="form-group">
-        {{ form.telefone.label }}
-        {{ form.telefone(class="form-control") }}
-    </div>
-    <div class="form-group">
-        {{ form.email.label }}
-        {{ form.email(class="form-control") }}
-    </div>
-    
-    <div class="form-group">
-        {{ form.tipo_indice.label }}
-        {{ form.tipo_indice(class="form-control") }}
-    </div>
-
-    <div class="form-group">
-        {{ form.valor_contrato.label }}
-        {{ form.valor_contrato(class="form-control") }}
-    </div>
-    
-    <div class="form-group">
-        {{ form.inicio_contrato.label }}
-        {{ form.inicio_contrato(class="form-control") }}
-    </div>
-    <div class="form-group">
-        {{ form.termino_contrato.label }}
-        {{ form.termino_contrato(class="form-control") }}
-    </div>
-    <div class="form-group">
         {{ form.abrangencia_contrato.label }}
         {{ form.abrangencia_contrato(class="form-control") }}
     </div>
+
+    <div class="form-group">
+        {{ form.indice_reajuste.label }}
+        {{ form.indice_reajuste(class="form-control") }}
+    </div>
+
     <button type="submit" class="btn btn-primary">Adicionar Contrato</button>
 </form>
 
@@ -218,11 +191,10 @@
 <hr>
 
 {# Formulário de Busca #}
-<form method="POST" action="{{ url_for('search') }}" class="mb-3">
+<form method="GET" action="{{ url_for('index') }}" class="mb-3">
     <div class="form-row align-items-center">
         <div class="col-auto">
-            <label class="sr-only" for="search">Pesquisar Contrato</label>
-            <input type="text" class="form-control" id="search" name="query" placeholder="Pesquisar por Nome ou CNPJ" value="{{ search_query if search_query else '' }}">
+            <input type="text" class="form-control" aria-label="Pesquisar por Nome, CNPJ ou Endereço" name="query" placeholder="Pesquisar por Nome, CNPJ ou Endereço" value="{{ search_query if search_query else '' }}">
         </div>
         <div class="col-auto">
             <button type="submit" class="btn btn-primary">Pesquisar</button>
@@ -231,87 +203,248 @@
     </div>
 </form>
 
-{# <-- INÍCIO: LÓGICA DE EXIBIÇÃO CONDICIONAL E PAGINAÇÃO --> #}
+<div id="searchResults"></div>
 
-{# Mensagem informativa quando exibindo apenas os últimos 3 contratos #}
-{% if mostrar_apenas_ultimos %}
-    <p>Exibindo os 3 últimos contratos adicionados. Use a busca acima para encontrar outros contratos.</p>
-{% endif %}
-
-{# Exibe a tabela principal de contratos SOMENTE se houver itens OU se for um resultado de busca #}
 {% if contratos and contratos.items %}
     <div class="table-responsive">
         <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nome</th>
-                    <th>CNPJ</th>
-                    <th>Endereço</th>
-                    <th>Criado em</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for contrato in contratos.items %}
-                    <tr>
-                        <td>{{ contrato.id }}</td>
-                        <td>{{ contrato.nome }}</td>
-                        <td>{{ contrato.cnpj }}</td>
-                        <td>{{ contrato.endereco }}</td>
-                        <td>{{ contrato.data_criacao.strftime('%d/%m/%Y %H:%M:%S') }}</td>
-                        <td>
-                            {# Mantenha apenas UM link para gerar o PDF, apontando para a rota '/pdf/<int:id>' #}
-                            <a href="{{ url_for('generate_pdf', id=contrato.id) }}" class="btn btn-info btn-action" target="_blank">Gerar PDF</a>
-                            <a href="{{ url_for('edit', id=contrato.id) }}" class="btn btn-warning btn-action">Editar</a>
-                            <form method="POST" action="{{ url_for('delete_contrato', id=contrato.id) }}">
-                                <button type="submit" class="btn btn-danger btn-action" onclick="return confirm('Tem certeza que deseja excluir este contrato?')">Excluir</button>
-                            </form>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <thead>
+        <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Nome</th>
+            <th scope="col">CNPJ</th>
+            <th scope="col">Endereço</th>
+            <th scope="col">Criado em</th>
+            <th scope="col">Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for contrato in contratos.items %}
+            <tr>
+                <td>{{ contrato.id }}</td>
+                <td>{{ contrato.nome }}</td>
+                <td>{{ contrato.cnpj }}</td>
+                <td>{{ contrato.endereco }}</td>
+                <td>{{ contrato.data_criacao.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                <td>
+                    <a href="{{ url_for('edit', id=contrato.id) }}" class="btn btn-warning btn-action">
+                        Editar
+                        <span class="sr-only"> contrato de {{ contrato.nome }}</span>
+                    </a>
+                    <a href="{{ url_for('generate_pdf', id=contrato.id) }}" class="btn btn-info btn-action" target="_blank">
+                        Gerar PDF
+                        <span class="sr-only"> do contrato de {{ contrato.nome }}</span>
+                    </a>
+                    <form method="POST" action="{{ url_for('delete_contrato', id=contrato.id) }}">
+                        <button type="submit" class="btn btn-danger btn-action" onclick="return confirm('Tem certeza que deseja excluir este contrato?')">
+                            Excluir
+                            <span class="sr-only"> contrato de {{ contrato.nome }}</span>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
     </div>
 
-    {# Paginação para a lista de contratos #}
     <nav aria-label="Navegação da página">
         <ul class="pagination justify-content-center">
             {% if contratos.has_prev %}
-                <li class="page-item">
-                    <a class="page-link" href="{{ url_for('index', page=contratos.prev_num) if mostrar_apenas_ultimos else url_for('search', page=contratos.prev_num, query=search_query) }}">Anterior</a>
-                </li>
+                <li class="page-item"><a class="page-link" href="{{ url_for('index', page=contratos.prev_num) }}">Anterior</a></li>
             {% endif %}
-            {% for page_num in contratos.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+            {% for page_num in contratos.iter_pages() %}
                 {% if page_num %}
                     {% if contratos.page == page_num %}
-                        <li class="page-item active">
-                            <a class="page-link" href="{{ url_for('index', page=page_num) if mostrar_apenas_ultimos else url_for('search', page=page_num, query=search_query) }}">{{ page_num }}</a>
-                        </li>
+                        <li class="page-item active"><a class="page-link" href="{{ url_for('index', page=page_num) }}">{{ page_num }}</a></li>
                     {% else %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ url_for('index', page=page_num) if mostrar_apenas_ultimos else url_for('search', page=page_num, query=search_query) }}">{{ page_num }}</a>
-                        </li>
+                        <li class="page-item"><a class="page-link" href="{{ url_for('index', page=page_num) }}">{{ page_num }}</a></li>
                     {% endif %}
                 {% else %}
                     <li class="page-item disabled"><span class="page-link">...</span></li>
                 {% endif %}
             {% endfor %}
             {% if contratos.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="{{ url_for('index', page=contratos.next_num) if mostrar_apenas_ultimos else url_for('search', page=contratos.next_num, query=search_query) }}">Próxima</a>
-                </li>
+                <li class="page-item"><a class="page-link" href="{{ url_for('index', page=contratos.next_num) }}">Próxima</a></li>
             {% endif %}
         </ul>
     </nav>
 {% else %}
-    {# Mensagens quando nenhum contrato é encontrado, diferenciando entre carregamento inicial e busca #}
-    {% if not search_query %}
-        <p>Nenhum contrato cadastrado.</p>
-    {% elif search_query %}
-        <p>Nenhum contrato encontrado para a pesquisa "{{ search_query }}".</p>
-    {% endif %}
+    <p>Nenhum contrato cadastrado.</p>
 {% endif %}
-{# <-- FIM: LÓGICA DE EXIBIÇÃO CONDICIONAL E PAGINAÇÃO --> #}
+
+<script>
+    document.getElementById('cep').addEventListener('blur', function() {
+        let cep = this.value.replace(/\D/g, '');
+
+        if (cep.length === 8) {
+            fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.erro) {
+                        document.getElementById('endereco').value = data.logradouro;
+                        document.getElementById('estado').value = data.uf;
+                    } else {
+                        alert('CEP não encontrado.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro na requisição da API do CEP:', error);
+                });
+        }
+    });
+
+    document.getElementById('cnpj').addEventListener('blur', function() {
+        let cnpj = this.value.replace(/\D/g, '');
+
+        if (cnpj.length === 14) {
+            fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('CNPJ não encontrado ou inválido.');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('nome').value = data.razao_social;
+                    document.getElementById('endereco').value = `${data.logradouro}, ${data.numero}`;
+                    document.getElementById('cep').value = data.cep.replace(/(\d{5})(\d{3})/, '$1-$2');
+                    document.getElementById('estado').value = data.uf;
+                    document.getElementById('telefone').value = data.ddd_telefone_1;
+                })
+                .catch(error => {
+                    alert(error.message);
+                    console.error('Erro na requisição da API do CNPJ:', error);
+                });
+        }
+    });
+</script>
+
+... <script>
+        // Função para limpar mensagens de erro
+        function clearError(elementId) {
+            document.getElementById(elementId).textContent = '';
+        }
+
+        // Event listener para o campo CEP
+        document.getElementById('cep').addEventListener('blur', function() {
+            let cep = this.value.replace(/\D/g, ''); // Remove caracteres não numéricos
+            const errorSpan = document.getElementById('cep-error');
+            clearError('cep-error');
+
+            if (cep.length === 8) {
+                fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.erro) {
+                            document.getElementById('endereco').value = data.logradouro;
+                            document.getElementById('estado').value = data.uf;
+                            // Limpar a mensagem de erro se a busca for bem-sucedida
+                            clearError('cep-error');
+                        } else {
+                            errorSpan.textContent = 'CEP não encontrado.';
+                            // Limpar campos preenchidos incorretamente
+                            document.getElementById('endereco').value = '';
+                            document.getElementById('estado').value = '';
+                        }
+                    })
+                    .catch(error => {
+                        errorSpan.textContent = 'Erro ao buscar o CEP. Tente novamente.';
+                        console.error('Erro na requisição da API do CEP:', error);
+                    });
+            } else if (cep.length > 0) {
+                errorSpan.textContent = 'CEP deve conter 8 dígitos.';
+            }
+        });
+
+        // Event listener para o campo CNPJ
+        document.getElementById('cnpj').addEventListener('blur', function() {
+            let cnpj = this.value.replace(/\D/g, ''); // Remove caracteres não numéricos
+            const errorSpan = document.getElementById('cnpj-error');
+            clearError('cnpj-error');
+
+            if (cnpj.length === 14) {
+                fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('CNPJ não encontrado ou inválido.');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Preenche os campos com os dados da API
+                        document.getElementById('nome').value = data.razao_social;
+                        document.getElementById('endereco').value = `${data.logradouro}, ${data.numero}`;
+                        document.getElementById('cep').value = data.cep.replace(/(\d{5})(\d{3})/, '$1-$2');
+                        document.getElementById('estado').value = data.uf;
+                        document.getElementById('telefone').value = data.ddd_telefone_1;
+                        clearError('cnpj-error');
+                    })
+                    .catch(error => {
+                        errorSpan.textContent = error.message;
+                        console.error('Erro na requisição da API do CNPJ:', error);
+                        // Limpar campos preenchidos incorretamente
+                        document.getElementById('nome').value = '';
+                        document.getElementById('endereco').value = '';
+                        document.getElementById('cep').value = '';
+                        document.getElementById('estado').value = '';
+                        document.getElementById('telefone').value = '';
+                    });
+            } else if (cnpj.length > 0) {
+                errorSpan.textContent = 'CNPJ deve conter 14 dígitos.';
+            }
+        });
+    </script>
+
+    <script>
+        document.getElementById('email').addEventListener('blur', function() {
+    const emailField = this;
+    const email = emailField.value;
+    const errorSpan = document.getElementById('email-error');
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+
+    if (email === '') {
+        // Se o campo estiver vazio, limpe a mensagem de erro
+        errorSpan.textContent = '';
+        return;
+    }
+
+    if (!emailRegex.test(email)) {
+        // Se o e-mail não corresponder ao formato, exiba uma mensagem de erro
+        errorSpan.textContent = 'Por favor, insira um e-mail válido.';
+    } else {
+        // Se o formato estiver correto, limpe qualquer mensagem de erro
+        errorSpan.textContent = '';
+    }
+});
+    </script>
+
+    <script>
+        document.getElementById('telefone').addEventListener('blur', function() {
+    const telefoneField = this;
+    const telefone = telefoneField.value;
+    const errorSpan = document.getElementById('telefone-error');
+
+    // Regex que permite:
+    // - Sinal de + no início
+    // - Números (0-9)
+    // - Parênteses, espaços, hífens e pontos
+    const telefoneRegex = /^[0-9()\s.+-]+$/;
+
+    if (telefone === '') {
+        errorSpan.textContent = ''; // Limpa a mensagem se o campo estiver vazio
+        return;
+    }
+
+    // Remover apenas caracteres que não fazem parte do formato de número
+    const telefoneLimpo = telefone.replace(/[^\d()+\s.-]/g, '');
+
+    if (!telefoneRegex.test(telefoneLimpo)) {
+        errorSpan.textContent = 'Por favor, insira um número de telefone válido. Use apenas números, parênteses, hífens, pontos e o sinal de +.';
+    } else {
+        errorSpan.textContent = ''; // Limpa a mensagem se o formato for válido
+    }
+});
+    </script>
 
 {% endblock %}
