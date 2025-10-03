@@ -1,50 +1,67 @@
 <!DOCTYPE html>
+
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <title>M.A. Automatização-Contratos - {% block title %}{% endblock %}</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+<title>M.A. Automatização-Contratos - {% block title %}{% endblock %}</title>
 <style>
-    .navbar-brand {
-        font-size: 2.7em; /* Ajuste este valor. Experimente 1.2em, 1.8em, 2em, etc. */
-        font-weight: bold; /* Opcional: para dar mais destaque */
-    }
-    .nav-link {
-            font-size: 1.8em; /* Ajuste este valor, experimente 1.2em, 1.3em, etc. */
-            font-weight: bold; /* Opcional: para dar mais destaque */
-        }
-        .navbar {
-    background-color: #2596be!important; /* Exemplo: um cinza escuro. Use o código hexadecimal da cor que preferir */
-    /* Você pode usar nomes de cores como 'darkblue', 'purple', etc., ou códigos hexadecimais como '#FF5733' */
+.navbar-brand {
+font-size: 2.7em;
+font-weight: bold;
+}
+.nav-link {
+font-size: 1.8em;
+font-weight: bold;
+}
+.navbar {
+background-color: #2596be!important;
+}
+/* Estilo para o Rodapé /
+.app-footer {
+text-align: center;
+margin-top: 50px; / Garante espaço entre o conteúdo e o rodapé */
+padding: 20px 0;
+font-size: 1em;
+color: #6c757d;
+border-top: 1px solid #dee2e6;
 }
 </style>
 </head>
-</head>
 <body>
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
-    <nav class="navbar navbar-expand-md navbar-light bg-light">
-        <a class="navbar-brand" href="{{ url_for('index') }}">M.A. Automatização-Contratos</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar- ml-auto">
-                <li class="nav-item active">
-                    <a class="nav-link" href="{{ url_for('clausulas') }}">Cláusulas de Contrato</a>
-                </li>
-                {% if current_user.is_authenticated %}
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
-                </li>
-                {% endif %}
-            </ul>
-        </div>
-    </nav>
-    <div class="container mt-4">
-        {% block content %}{% endblock %}
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+<nav class="navbar navbar-expand-md navbar-light bg-light">
+    <a class="navbar-brand" href="{{ url_for('index') }}">M.A. Automatização-Contratos</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar- ml-auto">
+            <li class="nav-item active">
+                <a class="nav-link" href="{{ url_for('clausulas') }}">Cláusulas de Contrato</a>
+            </li>
+            {% if current_user.is_authenticated %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+            </li>
+            {% endif %}
+        </ul>
     </div>
+</nav>
+
+<div class="container mt-4">
+    {% block content %}{% endblock %}
+</div>
+
+{# INÍCIO DO RODAPÉ #}
+<footer class="app-footer">
+    Todos os direitos reservados. &copy; 2025
+</footer>
+{# FIM DO RODAPÉ #}
+
 </body>
 </html>

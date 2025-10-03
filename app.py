@@ -155,7 +155,12 @@ def logout():
 def index():
     form = ContratoForm() # <--- INSTANCIE O FORMULÁRIO AQUI
 
+    # ==========================================================
+    # LÓGICA DE PROCESSAMENTO DO FORMULÁRIO (POST)
+    # Esta parte permanece para adicionar novos contratos
+    # ==========================================================
     if form.validate_on_submit():
+        # ... (Sua lógica de extração de dados do formulário) ...
         nome = form.nome.data
         cnpj = form.cnpj.data
         endereco = form.endereco.data
@@ -178,20 +183,54 @@ def index():
         db.session.add(novo_contrato)
         db.session.commit()
         flash('Contrato adicionado com sucesso!', 'success')
+        
+        # Redireciona para a página principal (agora sem lista de contratos)
         return redirect(url_for('index'))
     else:
         # Se o formulário não validar no POST ou for um GET request
-        # Flash errors if any (for example, if data is missing on POST)
         for field, errors in form.errors.items():
             for error in errors:
                 flash(f"Erro no campo '{getattr(form, field).label.text}': {error}", 'danger')
 
+    # ==========================================================
+    # LÓGICA DE VISUALIZAÇÃO E PESQUISA (GET)
+    # ==========================================================
+    
+    # Obtém os parâmetros da URL
     page = request.args.get('page', 1, type=int)
-    per_page = 5 # Ajuste conforme sua necessidade de paginação
-    contratos = ContratCond.query.order_by(ContratCond.data_criacao.desc()).paginate(page=page, per_page=per_page)
-    mostrar_apenas_ultimos = True # Para o caso inicial
+    search_query = request.args.get('query', type=str)
+    per_page = 5
+    
+    # Inicializa 'contratos' como None para que a tabela não seja exibida por padrão
+    contratos = None
+    
+    # A lista de contratos SÓ SERÁ CARREGADA se houver um termo de pesquisa (search_query)
+    if search_query:
+        # Se o termo de pesquisa existir, filtramos o banco de dados
+        # O .ilike() permite pesquisar de forma case-insensitive
+        
+        # ATENÇÃO: SUBSTITUA ESTA LÓGICA PELO SEU CÓDIGO REAL DE PESQUISA.
+        # Estamos pesquisando pelo Nome OU pelo CNPJ.
+        search_pattern = f"%{search_query}%"
+        
+        query = ContratCond.query.filter(
+            (ContratCond.nome.ilike(search_pattern)) | 
+            (ContratCond.cnpj.ilike(search_pattern))
+        ).order_by(ContratCond.data_criacao.desc())
+        
+        # Paginação dos resultados da pesquisa
+        contratos = query.paginate(page=page, per_page=per_page)
+    
+    
+    # Passamos contratos e o termo de pesquisa para o template
+    # Se 'search_query' for None, 'contratos' também será None, e o HTML esconderá a tabela.
+    return render_template('index.html', 
+                           form=form, 
+                           contratos=contratos, 
+                           search_query=search_query)
 
-    return render_template('index.html', contratos=contratos, mostrar_apenas_ultimos=mostrar_apenas_ultimos, search_query=None, form=form) # <--- PASSE O FORMULÁRIO AQUI
+# Note: 'mostrar_apenas_ultimos = True' e 'search_query=None' não são mais necessários
+# no contexto, pois são definidos ou calculados logo acima.
     
 @app.route('/add_contrato', methods=['GET', 'POST'])
 @login_required

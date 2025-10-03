@@ -117,16 +117,21 @@
 <h2>Novo Contrato</h2>
 <form method="POST">
     {{ form.csrf_token }} 
-    <div class="form-group">
-        {{ form.nome.label }}
-        {{ form.nome(class="form-control") }}
-        <span id="nome-error" class="error-message"></span>
-    </div>
+    <form method="POST">
+    {{ form.csrf_token }} 
+
     <div class="form-group">
         {{ form.cnpj.label }}
         {{ form.cnpj(class="form-control") }}
         <span id="cnpj-error" class="error-message"></span>
     </div>
+
+    <div class="form-group">
+        {{ form.nome.label }}
+        {{ form.nome(class="form-control") }}
+        <span id="nome-error" class="error-message"></span>
+    </div>
+    
     <div class="form-group">
         {{ form.endereco.label }}
         {{ form.endereco(class="form-control") }}
