@@ -74,6 +74,8 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message_category = 'info'
 login_manager.login_message = "Por favor, faça login para acessar esta página."
+# --- A LINHA CRÍTICA QUE ESTAVA FALTANDO ---
+migrate = Migrate(app, db) # <-
 
 
 # --- MODELOS DO BANCO DE DADOS ---
