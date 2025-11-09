@@ -11,6 +11,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf import FlaskForm
+from flask_migrate import Migrate # Certifique-se de que está importado
 from wtforms import StringField, DateField, DecimalField, SelectField, SubmitField, EmailField, PasswordField, TextAreaField
 from wtforms.validators import DataRequired, Length, Regexp, Optional, Email, EqualTo, ValidationError
 
