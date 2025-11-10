@@ -25,6 +25,7 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 from reportlab.platypus import Paragraph, Spacer, Image
 from reportlab.lib.fonts import addMapping
 from reportlab.platypus import SimpleDocTemplate # Necessário para a segunda função PDF (que foi removida)
+from logging.config import fileConfig
 
 # --- FUNÇÃO AUXILIAR PARA LIMPAR CNPJ ---
 def clean_cnpj(cnpj_str):
