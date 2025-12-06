@@ -44,7 +44,7 @@ SQLAlchemy==2.0.39
 tinycss2==1.4.0
 tinyhtml5==2.0.0
 typing_extensions==4.12.2
-urllib3==2.5.0
+urllib3==2.6.0
 virtualenv==20.29.3
 virtualenvwrapper-win==1.2.7
 weasyprint==66.0
