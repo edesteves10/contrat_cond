@@ -18,7 +18,7 @@ Flask-Login==0.6.3
 Flask-Migrate==4.1.0
 Flask-SQLAlchemy==3.1.1
 Flask-WTF==1.2.2
-fonttools==4.60.1
+fonttools==4.61.0
 greenlet==3.1.1
 gunicorn==23.0.0
 idna==3.11
