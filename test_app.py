@@ -1,6 +1,6 @@
 import unittest
 from app import app as flask_app, db 
-from app import Contrato # Importa seu modelo de contrato, se ele existir
+from app import ContratCond # Importa seu modelo de contrato, se ele existir
 from datetime import date
 
 # ID de usuário fixo que usaremos para todos os contratos de teste
