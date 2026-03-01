@@ -20,19 +20,17 @@ class ContractAppTestCase(unittest.TestCase):
             db.session.remove()
             db.drop_all()
 
-    # --- TESTES ---
-
     def test_01_login_page_loads(self):
         """Verifica se a página de login carrega."""
         response = self.client.get('/login')
         self.assertEqual(response.status_code, 200)
 
     def test_02_contract_creation(self):
-        """Testa o cadastro de um novo contrato enviando todos os campos obrigatórios."""
+        """Testa o cadastro via formulário POST."""
         new_contract_data = {
             'cnpj': '00.000.000/0001-00',
             'nome': 'CONDOMINIO TESTE',
-            'endereco': 'Rua de Teste, 123',  # ADICIONADO: Campo obrigatório
+            'endereco': 'Rua de Teste, 123',
             'cep': '01000-000',
             'estado': 'SP',
             'valor_contrato': '5000,00', 
@@ -42,22 +40,22 @@ class ContractAppTestCase(unittest.TestCase):
             'tipo_indice': 'IGP-M'
         }
 
-        # Faz o POST para a rota index (onde está sua lógica de salvar)
         response = self.client.post('/', data=new_contract_data, follow_redirects=True)
         self.assertEqual(response.status_code, 200)
         
         with self.app.app_context():
             contrato = Contrato.query.filter_by(nome='CONDOMINIO TESTE').first()
-            self.assertIsNotNone(contrato, "O contrato não foi encontrado no banco. Verifique se o formulário validou corretamente.")
+            self.assertIsNotNone(contrato, "O formulário falhou na validação. Verifique se há campos obrigatórios faltando no dict 'new_contract_data'.")
 
     def test_03_search_functionality(self):
-        """Testa a busca preenchendo campos obrigatórios na criação manual."""
+        """Testa a busca garantindo que o objeto criado no banco tenha todos os campos NOT NULL."""
         with self.app.app_context():
-            # Preenchendo endereco e outros campos para evitar IntegrityError
             c = Contrato(
                 nome="BUSCA_TARGET", 
                 cnpj="123", 
-                endereco="Endereço de Busca", # OBRIGATÓRIO
+                endereco="Endereço Teste",
+                cep="00000-000",   # ADICIONADO
+                estado="SP",        # ADICIONADO
                 valor_contrato=100.0, 
                 inicio_contrato=date(2025,1,1)
             )
@@ -69,12 +67,14 @@ class ContractAppTestCase(unittest.TestCase):
             self.assertIn(b"BUSCA_TARGET", response.data)
 
     def test_04_delete_contract(self):
-        """Testa a exclusão preenchendo campos obrigatórios."""
+        """Testa a exclusão garantindo que o objeto criado tenha todos os campos NOT NULL."""
         with self.app.app_context():
             c = Contrato(
                 nome="DELETAR", 
                 cnpj="456", 
-                endereco="Endereço de Delete", # OBRIGATÓRIO
+                endereco="Endereço Teste",
+                cep="00000-000",   # ADICIONADO
+                estado="SP",        # ADICIONADO
                 valor_contrato=100.0, 
                 inicio_contrato=date(2025,1,1)
             )
