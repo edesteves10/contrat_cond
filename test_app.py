@@ -3,10 +3,6 @@ from app import app as flask_app, db
 from app import ContratCond as Contrato 
 from datetime import date
 
-# Dados de teste
-TEST_USERNAME = 'testuser'
-TEST_PASSWORD = 'testpassword' 
-
 class ContractAppTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -32,46 +28,60 @@ class ContractAppTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_02_contract_creation(self):
-        """Testa o cadastro de um novo contrato fazendo POST para a rota '/'."""
+        """Testa o cadastro de um novo contrato enviando todos os campos obrigatórios."""
         new_contract_data = {
             'cnpj': '00.000.000/0001-00',
             'nome': 'CONDOMINIO TESTE',
-            'valor_contrato': '5000,00', # Enviando como string pois seu form trata a conversão
+            'endereco': 'Rua de Teste, 123',  # ADICIONADO: Campo obrigatório
+            'cep': '01000-000',
+            'estado': 'SP',
+            'valor_contrato': '5000,00', 
             'inicio_contrato': '2025-01-01',
             'termino_contrato': '2026-01-01',
             'email': 'teste@teste.com',
             'tipo_indice': 'IGP-M'
         }
 
-        # No seu app.py, a criação é no POST da rota '/'
+        # Faz o POST para a rota index (onde está sua lógica de salvar)
         response = self.client.post('/', data=new_contract_data, follow_redirects=True)
         self.assertEqual(response.status_code, 200)
         
         with self.app.app_context():
             contrato = Contrato.query.filter_by(nome='CONDOMINIO TESTE').first()
-            self.assertIsNotNone(contrato)
+            self.assertIsNotNone(contrato, "O contrato não foi encontrado no banco. Verifique se o formulário validou corretamente.")
 
     def test_03_search_functionality(self):
-        """Testa a busca usando o parâmetro 'termo' via GET."""
+        """Testa a busca preenchendo campos obrigatórios na criação manual."""
         with self.app.app_context():
-            c = Contrato(nome="BUSCA_TARGET", cnpj="123", valor_contrato=100, inicio_contrato=date(2025,1,1))
+            # Preenchendo endereco e outros campos para evitar IntegrityError
+            c = Contrato(
+                nome="BUSCA_TARGET", 
+                cnpj="123", 
+                endereco="Endereço de Busca", # OBRIGATÓRIO
+                valor_contrato=100.0, 
+                inicio_contrato=date(2025,1,1)
+            )
             db.session.add(c)
             db.session.commit()
 
-            # Sua rota index busca pelo parâmetro 'termo' na URL: request.args.get('termo')
             response = self.client.get('/?termo=BUSCA_TARGET')
             self.assertEqual(response.status_code, 200)
             self.assertIn(b"BUSCA_TARGET", response.data)
 
     def test_04_delete_contract(self):
-        """Testa a exclusão usando a rota correta '/delete/<id>'."""
+        """Testa a exclusão preenchendo campos obrigatórios."""
         with self.app.app_context():
-            c = Contrato(nome="DELETAR", cnpj="456", valor_contrato=100, inicio_contrato=date(2025,1,1))
+            c = Contrato(
+                nome="DELETAR", 
+                cnpj="456", 
+                endereco="Endereço de Delete", # OBRIGATÓRIO
+                valor_contrato=100.0, 
+                inicio_contrato=date(2025,1,1)
+            )
             db.session.add(c)
             db.session.commit()
             contrato_id = c.id
 
-        # Rota correta conforme seu app.py: /delete/<id>
         response = self.client.post(f'/delete/{contrato_id}', follow_redirects=True)
         self.assertEqual(response.status_code, 200)
 
