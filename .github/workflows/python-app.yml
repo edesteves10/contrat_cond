@@ -21,9 +21,11 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        # Instalamos as dependências do seu projeto + o pytest
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install pytest
 
     - name: Test with pytest
       run: |
-        # O GitHub vai rodar o comando pytest aqui
-        pytest
+        # Forçamos o pytest a olhar tanto o arquivo da raiz quanto a pasta de testes
+        pytest test_app.py tests/
