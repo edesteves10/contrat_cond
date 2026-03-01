@@ -1,17 +1,15 @@
 import unittest
 from app import app as flask_app, db 
-# CORREÇÃO 1: Importar como Contrato para coincidir com o uso no código
 from app import ContratCond as Contrato 
 from datetime import date
 
-TEST_USER_ID = 'test_user_id_12345'
+# Dados de teste
 TEST_USERNAME = 'testuser'
 TEST_PASSWORD = 'testpassword' 
 
 class ContractAppTestCase(unittest.TestCase):
 
     def setUp(self):
-        """Configurações executadas antes de cada teste."""
         self.app = flask_app
         self.app.config['TESTING'] = True
         self.app.config['WTF_CSRF_ENABLED'] = False 
@@ -22,91 +20,64 @@ class ContractAppTestCase(unittest.TestCase):
             db.create_all()
 
     def tearDown(self):
-        """Configurações executadas após cada teste."""
         with self.app.app_context():
             db.session.remove()
             db.drop_all()
 
-    # ===================================================================
-    # Testes de Funcionalidade
-    # ===================================================================
+    # --- TESTES ---
 
-    def test_01_index_page(self):
-        """Verifica se a página de login está acessível."""
-        # Se o seu '/' retorna 200 em vez de 302, significa que não há redirecionamento forçado.
-        # Ajustamos para validar a página de login que sabemos que deve retornar 200.
-        response_login = self.client.get('/login')
-        self.assertEqual(response_login.status_code, 200) 
+    def test_01_login_page_loads(self):
+        """Verifica se a página de login carrega."""
+        response = self.client.get('/login')
+        self.assertEqual(response.status_code, 200)
 
     def test_02_contract_creation(self):
-        """Testa o cadastro de um novo contrato (POST)."""
+        """Testa o cadastro de um novo contrato fazendo POST para a rota '/'."""
         new_contract_data = {
             'cnpj': '00.000.000/0001-00',
-            'nome': 'TESTE CNPJ',
-            'valor_contrato': 5000.00,
+            'nome': 'CONDOMINIO TESTE',
+            'valor_contrato': '5000,00', # Enviando como string pois seu form trata a conversão
             'inicio_contrato': '2025-01-01',
+            'termino_contrato': '2026-01-01',
+            'email': 'teste@teste.com',
+            'tipo_indice': 'IGP-M'
         }
 
-        with self.client.session_transaction() as sess:
-            sess['user_id'] = TEST_USER_ID 
-
+        # No seu app.py, a criação é no POST da rota '/'
+        response = self.client.post('/', data=new_contract_data, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        
         with self.app.app_context():
-            # CORREÇÃO 2: Verifique se a rota é /contrato/salvar ou /salvar_contrato
-            # Se der 404 de novo, verifique o @app.route no seu app.py
-            response = self.client.post('/contrato/salvar', data=new_contract_data, follow_redirects=True)
-            
-            # Se a rota estiver correta, deve retornar 200
-            self.assertEqual(response.status_code, 200)
-            
-            contrato = Contrato.query.filter_by(cnpj='00.000.000/0001-00').first()
+            contrato = Contrato.query.filter_by(nome='CONDOMINIO TESTE').first()
             self.assertIsNotNone(contrato)
 
     def test_03_search_functionality(self):
-        """Testa a funcionalidade de busca."""
+        """Testa a busca usando o parâmetro 'termo' via GET."""
         with self.app.app_context():
-            contrato = Contrato(
-                cnpj='11.111.111/0001-11', 
-                nome='Contrato Teste Busca', 
-                valor_contrato=100.00, 
-                inicio_contrato=date(2025, 1, 1),
-                user_id=TEST_USER_ID
-            )
-            db.session.add(contrato)
+            c = Contrato(nome="BUSCA_TARGET", cnpj="123", valor_contrato=100, inicio_contrato=date(2025,1,1))
+            db.session.add(c)
             db.session.commit()
-            
-            with self.client.session_transaction() as sess:
-                sess['user_id'] = TEST_USER_ID
 
-            # Simula a busca no formulário da index
-            response = self.client.post('/', data={'termo_busca': 'Teste Busca'}, follow_redirects=True)
+            # Sua rota index busca pelo parâmetro 'termo' na URL: request.args.get('termo')
+            response = self.client.get('/?termo=BUSCA_TARGET')
             self.assertEqual(response.status_code, 200)
-            self.assertIn(b"Contrato Teste Busca", response.data)
+            self.assertIn(b"BUSCA_TARGET", response.data)
 
     def test_04_delete_contract(self):
-        """Testa a exclusão de um contrato."""
+        """Testa a exclusão usando a rota correta '/delete/<id>'."""
         with self.app.app_context():
-            contrato_to_delete = Contrato(
-                cnpj='99.999.999/0001-99', 
-                nome='Para Excluir', 
-                valor_contrato=1.00, 
-                inicio_contrato=date(2025, 1, 1),
-                user_id=TEST_USER_ID
-            )
-            db.session.add(contrato_to_delete)
+            c = Contrato(nome="DELETAR", cnpj="456", valor_contrato=100, inicio_contrato=date(2025,1,1))
+            db.session.add(c)
             db.session.commit()
-            
-            contrato_id = contrato_to_delete.id 
+            contrato_id = c.id
 
-            with self.client.session_transaction() as sess:
-                sess['user_id'] = TEST_USER_ID
-                
-            # CORREÇÃO 3: Ajuste o caminho da URL se a sua rota de exclusão for diferente
-            response = self.client.post(f'/contrato/{contrato_id}/excluir', follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
+        # Rota correta conforme seu app.py: /delete/<id>
+        response = self.client.post(f'/delete/{contrato_id}', follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
 
-            # Verifica se foi removido
+        with self.app.app_context():
             contrato = Contrato.query.get(contrato_id)
             self.assertIsNone(contrato)
-            
+
 if __name__ == '__main__':
     unittest.main()
