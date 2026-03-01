@@ -1,317 +1,917 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M.A. Automação-Contratos - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Variável CSS para controle de fonte */
+        :root {
+            --font-size-base: 16px; /* Tamanho base padrão */
+        }
+        
+        body {
+            /* Aplica a variável de fonte a todo o corpo */
+            font-size: var(--font-size-base);
+            transition: background-color 0.3s, color 0.3s;
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
 
-{% block title %}Contratos{% endblock %}
+        /* Estilos para o Modo Alto Contraste */
+        .high-contrast {
+            background-color: #000 !important;
+            color: #FFF !important;
+        }
+        
+        /* Regra Universal para forçar alto contraste e remover sombras/gradientes */
+        .high-contrast *,
+        .high-contrast .card {
+            background-color: inherit !important;
+            color: inherit !important;
+            border-color: #FFFF00 !important; /* Borda amarela para contraste */
+            box-shadow: none !important;
+            /* Remove filtro: filter: grayscale(100%) contrast(200%); - Pode atrapalhar a leitura em alguns navegadores */
+        }
 
-{% block content %}
-<style>
-    body {
-        font-size: 22px;
-    }
+        /* Exceção para botões e links no modo alto contraste para mantê-los funcionais e visíveis */
+        .high-contrast a, 
+        .high-contrast button,
+        .high-contrast input,
+        .high-contrast select,
+        .high-contrast textarea {
+            background-color: #FFFF00 !important;
+            color: #000 !important;
+            border: 2px solid #000 !important;
+            font-weight: bold !important;
+        }
+        
+        .high-contrast .bg-red-600,
+        .high-contrast .bg-blue-600,
+        .high-contrast .bg-gray-500 {
+            background-color: #FFFF00 !important;
+            color: #000 !important;
+        }
 
-    h1.page-title {
-        font-size: 2.5em;
-        margin-bottom: 0.8em;
-    }
+        .error-message {
+            color: #dc2626; /* Cor vermelha para erros */
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
 
-    h2 {
-        font-size: 1.8em;
-        margin-top: 1.5em;
-        margin-bottom: 0.5em;
-    }
-
-    label {
-        font-size: 1.2em;
-        display: block;
-        margin-bottom: 0.5em;
-    }
-
-    input[type="text"],
-    input[type="email"],
-    input[type="number"],
-    input[type="date"] {
-        font-size: 1.2em;
-        padding: 0.5em;
-        margin-bottom: 1em;
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    /* <-- CORREÇÃO AQUI: 'select' NÃO DEVE ESTAR ANINHADO DENTRO DE input[type="date"] --> */
-    select.form-control { /* Use .form-control para ser mais específico do Bootstrap */
-        font-size: 0.8em; /* A fonte do campo de seleção e, muitas vezes, das opções */
-        padding: 0.5em;
-        margin-bottom: 1em;
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    button[type="submit"] {
-        font-size: 1.1em;
-        padding: 0.7em 1.5em;
-    }
-
-    hr {
-        margin: 1em 0;
-    }
-
-    .table th {
-        font-size: 1.1em;
-        padding: 0.6em;
-        font-weight: bold;
-    }
-
-    .table td {
-        font-size: 1.1em;
-        padding: 0.6em;
-    }
-
-    .pagination a {
-        font-size: 1em;
-        padding: 0.5em 0.8em;
-        margin: 0 0.2em;
-        border: 1px solid #ccc;
-        text-decoration: none;
-        color: #333;
-        border-radius: 5px;
-    }
-
-    .pagination .active a {
-        background-color: #007bff;
-        color: white;
-        border-color: #007bff;
-    }
-
-    nav a {
-        font-size: 1.2em;
-        margin-right: 1em;
-        text-decoration: none;
-        color: #333;
-    }
-
-    nav a:hover {
-        color: #007bff;
-    }
-
-    /* ESTILOS ATUALIZADOS PARA BOTÕES DE AÇÃO */
-    .table td:last-child {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: nowrap;
-        gap: 5px;
-        justify-content: flex-start;
-        align-items: center; /* Centraliza verticalmente, se a altura for definida, ele alinhará ao meio da célula */
-        min-width: 320px; /* Mantenha ou ajuste se necessário */
-    }
-
-    .btn-action {
-        width: 100px; /* Força uma largura fixa para todos os botões */
-        height: 32px; /* <-- NOVO: Força uma altura fixa para todos os botões (ajuste este valor) */
-        padding: 0; /* <-- NOVO: Reseta o padding para que line-height controle a altura do texto */
-        font-size: 0.9em;
-        line-height: 30px; /* <-- NOVO: Alinha verticalmente o texto dentro do botão com a altura fixa */
-        text-align: center;
-        white-space: nowrap;
-        box-sizing: border-box;
-        text-decoration: none;
-        display: block; /* Essencial para que width e height funcionem corretamente */
-        margin: 0 !important;
-        border-width: 1px !important;
-    }
-
-    /* Estilo específico para o formulário do botão de exclusão */
-    .table td:last-child form {
-        display: contents; /* Mantém o formulário transparente para o layout flex */
-    }
-
-    /* Estilo específico para o botão de exclusão dentro do formulário */
-    /* Garante que o botão dentro do form se comporte exatamente como os links */
-    .table td:last-child form button.btn-action {
-        margin: 0 !important;
-        border-width: 1px !important;
-        /* Reafirmar padding/line-height se necessário, mas as regras acima devem bastar */
-        padding: 0 !important; /* Reafirmar padding zero */
-        line-height: 30px !important; /* Reafirmar line-height */
-    }
-
-
-    /* Ajuste as cores específicas dos botões, se necessário, para consistência */
-    .btn-warning { background-color: #ffc107; border-color: #ffc107; color: #212529; }
-    .btn-info { background-color: #17a2b8; border-color: #17a2b8; }
-    .btn-danger { background-color: #dc3545; border-color: #dc3545; }
-
-</style>
-
-<h1 class="page-title">Contratos</h1>
-<hr>
-
-{# Mensagens flash para feedback #}
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-{% endwith %}
-
-<h2>Novo Contrato</h2>
-<form method="POST" action="{{ url_for('index') }}">
-    {# Certifique-se de usar form.csrf_token para formulários WTForms #}
-    {{ form.csrf_token }} 
-
-    <div class="form-group">
-        {{ form.nome.label }}
-        {{ form.nome(class="form-control") }}
-    </div>
-    <div class="form-group">
-        {{ form.cnpj.label }}
-        {{ form.cnpj(class="form-control") }}
-    </div>
-    <div class="form-group">
-        {{ form.endereco.label }}
-        {{ form.endereco(class="form-control") }}
-    </div>
-    <div class="form-group">
-        {{ form.cep.label }}
-        {{ form.cep(class="form-control") }}
-    </div>
-    <div class="form-group">
-        {{ form.estado.label }}
-        {{ form.estado(class="form-control") }}
-    </div>
-    <div class="form-group">
-        {{ form.telefone.label }}
-        {{ form.telefone(class="form-control") }}
-    </div>
-    <div class="form-group">
-        {{ form.email.label }}
-        {{ form.email(class="form-control") }}
-    </div>
-    
-    <div class="form-group">
-        {{ form.tipo_indice.label }}
-        {{ form.tipo_indice(class="form-control") }}
+    <div class="fixed top-4 right-4 z-50 flex space-x-2 p-2 bg-white card rounded-lg shadow-lg">
+        <a href="{{ url_for('logout') }}" title="Sair do Sistema" class="p-2 text-sm bg-red-600 text-white hover:bg-red-700 rounded-lg font-bold transition duration-150">
+            Sair
+        </a>
+        <button id="toggle-contrast" title="Alternar Modo de Alto Contraste" class="p-2 text-sm bg-gray-200 hover:bg-gray-300 rounded-lg font-bold transition duration-150">
+            Contraste
+        </button>
+        <button id="increase-font" title="Aumentar Tamanho da Fonte" class="p-2 text-sm bg-gray-200 hover:bg-gray-300 rounded-lg font-bold transition duration-150">
+            A+
+        </button>
+        <button id="decrease-font" title="Diminuir Tamanho da Fonte" class="p-2 text-sm bg-gray-200 hover:bg-gray-300 rounded-lg font-bold transition duration-150">
+            A-
+        </button>
     </div>
 
-    <div class="form-group">
-        {{ form.valor_contrato.label }}
-        {{ form.valor_contrato(class="form-control") }}
-    </div>
-    
-    <div class="form-group">
-        {{ form.inicio_contrato.label }}
-        {{ form.inicio_contrato(class="form-control") }}
-    </div>
-    <div class="form-group">
-        {{ form.termino_contrato.label }}
-        {{ form.termino_contrato(class="form-control") }}
-    </div>
-    <div class="form-group">
-        {{ form.abrangencia_contrato.label }}
-        {{ form.abrangencia_contrato(class="form-control") }}
-    </div>
-    <button type="submit" class="btn btn-primary">Adicionar Contrato</button>
-</form>
+    <!-- NAVBAR - COR AZUL E LOGO ADICIONADOS -->
+    <nav class="bg-blue-800 shadow-md p-4 flex justify-start items-center sticky top-0 z-10">
+        <!-- CONTAINER CENTRALIZADOR: max-w-7xl e mx-auto para respeitar as margens laterais do container principal -->
+        <div class="w-full max-w-7xl flex justify-between items-center">
+            
+            <!-- BLOCO ESQUERDA: Logo e Título - Alterado para justificar ao início (esquerda) -->
+            <div class="flex items-center space-x-3 justify-start">
+                <!-- LOGO DA EMPRESA -->
+                <img src="static/logo.png" alt="Logo M.A. Automação" class="h-8 rounded-md object-contain">
+                <!-- TITULO -->
+                <div class="text-xl font-bold text-white">M.A. Automação-Contratos</div>
+            </div>
+            
+            <!-- BLOCO DIREITA: Usuário e Acessibilidade -->
+            <div class="flex items-center space-x-4 ml-auto">
+                <!-- Texto do usuário alterado para branco para contraste -->
+                <span class="text-white self-center hidden sm:block">Bem-vindo, {{ current_user.username if current_user.is_authenticated else 'Visitante' }}</span>
 
-<h2 class="mt-5">Contratos Existentes</h2>
-<hr>
+            </div>
+        </div>
+    </nav>
 
-{# Formulário de Busca #}
-<form method="POST" action="{{ url_for('search') }}" class="mb-3">
-    <div class="form-row align-items-center">
-        <div class="col-auto">
-            <label class="sr-only" for="search">Pesquisar Contrato</label>
-            <input type="text" class="form-control" id="search" name="query" placeholder="Pesquisar por Nome ou CNPJ" value="{{ search_query if search_query else '' }}">
-        </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-primary">Pesquisar</button>
-            <a href="{{ url_for('index') }}" class="btn btn-secondary">Limpar Busca</a>
-        </div>
-    </div>
-</form>
+    <div class="container mx-auto p-4 md:p-8">
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-6 space-y-3">
+                    {% for category, message in messages %}
+                        <div class="p-4 rounded-lg text-white font-medium 
+                            {% if category == 'success' %} bg-green-500
+                            {% elif category == 'error' %} bg-red-500
+                            {% else %} bg-blue-500
+                            {% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
 
-{# <-- INÍCIO: LÓGICA DE EXIBIÇÃO CONDICIONAL E PAGINAÇÃO --> #}
+        <div class="bg-white card rounded-xl p-6 mb-10 shadow-lg">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Cadastrar Novo Contrato</h2>
+            
+            <form method="POST" action="{{ url_for('index') }}" class="space-y-4">
+                
+                {{ form.hidden_tag() }} 
 
-{# Mensagem informativa quando exibindo apenas os últimos 3 contratos #}
-{% if mostrar_apenas_ultimos %}
-    <p>Exibindo os 3 últimos contratos adicionados. Use a busca acima para encontrar outros contratos.</p>
-{% endif %}
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label for="{{ form.cnpj.id }}" class="block text-sm font-medium text-gray-700">CNPJ (Empresa)</label>
+                        {{ form.cnpj(class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500", id='cnpj') }}
+                        {% for error in form.cnpj.errors %}
+                            <p class="error-message">{{ error }}</p>
+                        {% endfor %}
+                        <p id="error-cnpj" class="error-message hidden"></p>
+                    </div>
 
-{# Exibe a tabela principal de contratos SOMENTE se houver itens OU se for um resultado de busca #}
-{% if contratos and contratos.items %}
-    <div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nome</th>
-                    <th>CNPJ</th>
-                    <th>Endereço</th>
-                    <th>Criado em</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for contrato in contratos.items %}
-                    <tr>
-                        <td>{{ contrato.id }}</td>
-                        <td>{{ contrato.nome }}</td>
-                        <td>{{ contrato.cnpj }}</td>
-                        <td>{{ contrato.endereco }}</td>
-                        <td>{{ contrato.data_criacao.strftime('%d/%m/%Y %H:%M:%S') }}</td>
-                        <td>
-                            {# Mantenha apenas UM link para gerar o PDF, apontando para a rota '/pdf/<int:id>' #}
-                            <a href="{{ url_for('generate_pdf', id=contrato.id) }}" class="btn btn-info btn-action" target="_blank">Gerar PDF</a>
-                            <a href="{{ url_for('edit', id=contrato.id) }}" class="btn btn-warning btn-action">Editar</a>
-                            <form method="POST" action="{{ url_for('delete_contrato', id=contrato.id) }}">
-                                <button type="submit" class="btn btn-danger btn-action" onclick="return confirm('Tem certeza que deseja excluir este contrato?')">Excluir</button>
-                            </form>
-                        </td>
-                    </tr>
+                    <div>
+                        <label for="{{ form.nome.id }}" class="block text-sm font-medium text-gray-700">Nome/Razão Social</label>
+                        {{ form.nome(class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500", id='nome') }}
+                        {% for error in form.nome.errors %}
+                            <p class="error-message">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.valor_contrato.id }}" class="block text-sm font-medium text-gray-700">Valor do Contrato (R$ 0.000,00)</label>
+                    {{ form.valor_contrato(
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500", 
+                        placeholder="Ex: R$ 15.000,00", 
+                        id='valor_contrato',
+                        value=form.valor_contrato.data | currency_br 
+                    ) }}
+                    {% for error in form.valor_contrato.errors %}
+                        <p class="error-message">{{ error }}</p>
+                    {% endfor %}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label for="{{ form.inicio_contrato.id }}" class="block text-sm font-medium text-gray-700">Início do Contrato</label>
+                        {{ form.inicio_contrato(class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500", type="date") }}
+                        {% for error in form.inicio_contrato.errors %}
+                            <p class="error-message">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.termino_contrato.id }}" class="block text-sm font-medium text-gray-700">Término do Contrato</label>
+                        {{ form.termino_contrato(class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500", type="date") }}
+                        {% for error in form.termino_contrato.errors %}
+                            <p class="error-message">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.abrangencia_contrato.id }}" class="block text-sm font-medium text-gray-700">Abrangência</label>
+                        {{ form.abrangencia_contrato(class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500") }}
+                        {% for error in form.abrangencia_contrato.errors %}
+                            <p class="error-message">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label for="{{ form.tipo_indice.id }}" class="block text-sm font-medium text-gray-700">Índice de Reajuste</label>
+                    {{ form.tipo_indice(class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm") }}
+                    {% for error in form.tipo_indice.errors %}
+                        <span class="text-xs text-red-500">{{ error }}</span>
+                    {% endfor %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.estado.id }}" class="block text-sm font-medium text-gray-700">Estado (UF)</label>
+                        {{ form.estado(class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500", id='estado') }}
+                        {% for error in form.estado.errors %}
+                            <p class="error-message">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.cep.id }}" class="block text-sm font-medium text-gray-700">CEP (00000-000)</label>
+                        {{ form.cep(class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500", id='cep') }}
+                        {% for error in form.cep.errors %}
+                            <p class="error-message">{{ error }}</p>
+                        {% endfor %}
+                        <p id="error-cep" class="error-message hidden"></p>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="{{ form.endereco.id }}" class="block text-sm font-medium text-gray-700">Endereço Completo</label>
+                    {{ form.endereco(class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500", id='endereco') }}
+                    {% for error in form.endereco.errors %}
+                        <p class="error-message">{{ error }}</p>
+                    {% endfor %}
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="{{ form.telefone.id }}" class="block text-sm font-medium text-gray-700">Telefone ((00) 00000-0000)</label>
+                        {{ form.telefone(class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500", id='telefone') }}
+                        {% for error in form.telefone.errors %}
+                            <p class="error-message">{{ error }}</p>
+                        {% endfor %}
+                        <p id="error-telefone" class="error-message hidden"></p>
+                    </div>
+
+                    <div>
+                        <label for="{{ form.email.id }}" class="block text-sm font-medium text-gray-700">Email</label>
+                        {{ form.email(class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500", id='email') }}
+                        {% for error in form.email.errors %}
+                            <p class="error-message">{{ error }}</p>
+                        {% endfor %}
+                        <p id="error-email" class="error-message hidden"></p>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="{{ form.clausulas_adicionais.id }}" class="block text-sm font-medium text-gray-700">Cláusulas Adicionais</label>
+                {{ form.clausulas_adicionais(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                {% for error in form.clausulas_adicionais.errors %}
+                    <p class="error-message">{{ error }}</p>
                 {% endfor %}
-            </tbody>
-        </table>
-    </div>
+                </div>
 
-    {# Paginação para a lista de contratos #}
-    <nav aria-label="Navegação da página">
-        <ul class="pagination justify-content-center">
-            {% if contratos.has_prev %}
-                <li class="page-item">
-                    <a class="page-link" href="{{ url_for('index', page=contratos.prev_num) if mostrar_apenas_ultimos else url_for('search', page=contratos.prev_num, query=search_query) }}">Anterior</a>
-                </li>
-            {% endif %}
-            {% for page_num in contratos.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
-                {% if page_num %}
-                    {% if contratos.page == page_num %}
-                        <li class="page-item active">
-                            <a class="page-link" href="{{ url_for('index', page=page_num) if mostrar_apenas_ultimos else url_for('search', page=page_num, query=search_query) }}">{{ page_num }}</a>
-                        </li>
-                    {% else %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ url_for('index', page=page_num) if mostrar_apenas_ultimos else url_for('search', page=page_num, query=search_query) }}">{{ page_num }}</a>
-                        </li>
-                    {% endif %}
+                <div class="text-right pt-4">
+                    {{ form.submit(class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition duration-200 cursor-pointer") }}
+                </div>
+            </form>
+        </div>
+
+        <div class="bg-white card rounded-xl p-6 shadow-lg">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Meus Contratos Cadastrados</h2>
+
+            <form method="GET" action="{{ url_for('index') }}" class="mb-6 flex space-x-4">
+                {{ search_form.termo(class="flex-grow border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500", placeholder="Pesquisar por Razão Social, CNPJ ou CEP...") }}
+                
+                <a href="{{ url_for('index') }}" class="px-4 py-2 bg-yellow-500 text-white font-bold rounded-lg hover:bg-yellow-600 transition duration-200 self-center">Limpar</a>
+                
+                <button type="submit" class="px-4 py-2 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 transition duration-200 self-center">Buscar</button>
+            </form>
+
+
+            {% if contratos %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 rounded-lg overflow-hidden">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Razão Social</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CNPJ</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Início</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for contrato in contratos.items %}
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ contrato.id }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ contrato.nome }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ contrato.cnpj }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ contrato.valor_contrato }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ contrato.inicio_contrato.strftime('%d/%m/%Y') }}</td>
+                                    
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex space-x-2 justify-center">
+                                            
+                                            <a href="{{ url_for('download_contrato_pdf', id=contrato.id) }}" 
+   class="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-3 rounded-lg text-xs transition duration-200" 
+   title="Gerar e Fazer Download do PDF">
+    PDF
+</a>
+                                            
+                                            <a href="{{ url_for('clausulas', id=contrato.id) }}" 
+   class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded-lg text-xs transition duration-200" 
+   title="Ver Cláusulas Adicionais">
+    Cláusulas
+</a>
+                                            
+                                            <a href="{{ url_for('editar_contrato', contrato_id=contrato.id) }}" 
+   class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1 px-3 rounded-lg text-xs transition duration-200" 
+   title="Editar Contrato">
+    Editar
+</a>
+                                            
+                                            <!-- 4. EXCLUIR (Usando um formulário para POST seguro) -->
+<form method="POST" action="{{ url_for('delete_contrato', id=contrato.id) }}" class="inline"
+    onsubmit="return confirm('Tem certeza que deseja excluir o contrato para {{ contrato.nome }}?');">
+    
+    <!-- Certifique-se de que 'form.exclusao' é um HiddenForm com csrf_token em seu app.py, ou use 'form.hidden_tag()' se o form de exclusão estiver no form principal -->
+    {{ form.hidden_tag() }} 
+
+    <button type="submit" 
+            class="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-lg text-xs transition duration-200"
+            title="Excluir Contrato">
+        Excluir
+    </button>
+</form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                
+                                {% else %}
+                            <tr>
+                                <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">Nenhum contrato encontrado.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
                 {% else %}
-                    <li class="page-item disabled"><span class="page-link">...</span></li>
-                {% endif %}
-            {% endfor %}
-            {% if contratos.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="{{ url_for('index', page=contratos.next_num) if mostrar_apenas_ultimos else url_for('search', page=contratos.next_num, query=search_query) }}">Próxima</a>
-                </li>
+                <p class="text-gray-500 text-center py-4">Nenhum contrato cadastrado. Use o formulário acima para começar!</p>
             {% endif %}
-        </ul>
-    </nav>
-{% else %}
-    {# Mensagens quando nenhum contrato é encontrado, diferenciando entre carregamento inicial e busca #}
-    {% if not search_query %}
-        <p>Nenhum contrato cadastrado.</p>
-    {% elif search_query %}
-        <p>Nenhum contrato encontrado para a pesquisa "{{ search_query }}".</p>
-    {% endif %}
-{% endif %}
-{# <-- FIM: LÓGICA DE EXIBIÇÃO CONDICIONAL E PAGINAÇÃO --> #}
 
-{% endblock %}
+            
+    <!-- FOOTER ADICIONADO -->
+    <footer class="bg-gray-200 text-gray-600 text-center text-sm p-4 mt-auto">
+        <p>&copy; {{ now().year if now is defined else '2025' }} M.A. Automação. Todos os direitos reservados.</p>
+    </footer>
+
+        </div>
+    </div> <script>
+        // Lógica de acessibilidade aqui (aumento/diminuição de fonte e contraste)
+        // ... (Este script está faltando, mas é necessário para os botões A+/A-/Contraste funcionarem)
+    </script>
+
+    <script>
+    // Variáveis de estado
+    let isContrastEnabled = false;
+    let currentFontSizeLevel = 1; // 1 (Padrão), 2 (Médio), 3 (Grande)
+    const MAX_FONT_LEVEL = 3;
+    const MIN_FONT_LEVEL = 1;
+
+    /**
+     * Alterna entre modo de alto contraste (Alto Contraste / Padrão).
+     */
+    function toggleContrast() {
+        isContrastEnabled = !isContrastEnabled;
+        document.body.classList.toggle('high-contrast', isContrastEnabled);
+        
+        // Atualiza o texto do botão
+        const button = document.getElementById('toggle-contrast');
+        if (isContrastEnabled) {
+            button.textContent = 'Contraste OFF';
+            button.title = 'Desativar Modo de Alto Contraste';
+        } else {
+            button.textContent = 'Contraste ON';
+            button.title = 'Ativar Modo de Alto Contraste';
+        }
+
+        // Feedback (substitui alert)
+        // Você pode implementar uma caixa de mensagem customizada aqui, se desejar.
+        console.log("Alto Contraste: " + (isContrastEnabled ? "Ativado" : "Desativado"));
+    }
+
+    /**
+     * Aplica a classe de tamanho de fonte atual ao corpo.
+     */
+    function updateFontSizeClass() {
+        // Remove todas as classes de fonte existentes
+        document.body.classList.remove('font-size-2', 'font-size-3');
+        
+        // Aplica a classe correspondente ao nível atual (se não for o padrão)
+        if (currentFontSizeLevel > 1) {
+            document.body.classList.add(`font-size-${currentFontSizeLevel}`);
+        }
+        
+        console.log("Nível da Fonte: " + currentFontSizeLevel);
+    }
+
+    /**
+     * Aumenta o tamanho da fonte, até o limite máximo.
+     */
+    function increaseFont() {
+        if (currentFontSizeLevel < MAX_FONT_LEVEL) {
+            currentFontSizeLevel++;
+            updateFontSizeClass();
+        }
+    }
+
+    /**
+     * Diminui o tamanho da fonte, até o limite mínimo.
+     */
+    function decreaseFont() {
+        if (currentFontSizeLevel > MIN_FONT_LEVEL) {
+            currentFontSizeLevel--;
+            updateFontSizeClass();
+        }
+    }
+
+    // ----------------------------------
+    // EVENT LISTENERS (Ao carregar a página)
+    // ----------------------------------
+    window.onload = function() {
+        // 1. Associa a função ao botão de contraste
+        const contrastButton = document.getElementById('toggle-contrast');
+        if (contrastButton) {
+            contrastButton.addEventListener('click', toggleContrast);
+            contrastButton.tabIndex = 0; // Garante que seja navegável por TAB
+        }
+
+        // 2. Associa as funções aos botões de tamanho de fonte
+        const increaseButton = document.getElementById('increase-font');
+        if (increaseButton) {
+            increaseButton.addEventListener('click', increaseFont);
+            increaseButton.tabIndex = 0;
+        }
+
+        const decreaseButton = document.getElementById('decrease-font');
+        if (decreaseButton) {
+            decreaseButton.addEventListener('click', decreaseFont);
+            decreaseButton.tabIndex = 0;
+        }
+        
+        // 3. Opcional: Adiciona um atalho de teclado para o Contraste (Alt+C)
+        document.addEventListener('keydown', (event) => {
+            if (event.altKey && event.key.toUpperCase() === 'C') {
+                event.preventDefault();
+                toggleContrast();
+            }
+        });
+    }
+
+</script>
+</body>
+</html>
+
+    <!-- ============================================== -->
+    <!-- JAVASCRIPT: UNIFICADO E CORRIGIDO              -->
+    <!-- TODO O CÓDIGO DEVE ESTAR DENTRO DESTA TAG <script> -->
+    <!-- ============================================== -->
+    <script>
+        // ===========================================
+        // VARIÁVEIS DE INPUTS
+        // Estas variáveis devem ser acessíveis pelas funções de máscara e API.
+        // ===========================================
+        const cnpjInput = document.getElementById('cnpj');
+        const nomeInput = document.getElementById('nome');
+        const cepInput = document.getElementById('cep');
+        const enderecoInput = document.getElementById('endereco');
+        const estadoInput = document.getElementById('estado');
+        const telefoneInput = document.getElementById('telefone');
+        const emailInput = document.getElementById('email');
+        const valorContratoInput = document.getElementById('valor_contrato');
+        const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+
+        // ===========================================
+        // FUNÇÕES DE API (DEFINIDAS FORA DO DOMContentLoaded para reuso)
+        // ===========================================
+
+        /**
+         * Exibe ou oculta a mensagem de erro para um campo específico.
+         */
+        function validateField(inputElement, errorMessage) {
+            const errorElement = document.getElementById('error-' + inputElement.id);
+            if (!errorElement) return;
+
+            if (errorMessage) {
+                inputElement.classList.add('input-error');
+                errorElement.textContent = errorMessage;
+                errorElement.classList.remove('hidden');
+            } else {
+                inputElement.classList.remove('input-error');
+                errorElement.textContent = '';
+                errorElement.classList.add('hidden');
+            }
+        }
+        
+        /**
+         * Busca dados de CNPJ na BrasilAPI e preenche campos do formulário.
+         */
+        async function fetchCNPJ() {
+            // Verifica se o elemento existe
+            if (!cnpjInput) return;
+            
+            const rawCNPJ = cnpjInput.value.replace(/\D/g, '');
+
+            if (rawCNPJ.length !== 14) {
+                validateField(cnpjInput, 'CNPJ deve ter 14 dígitos. Ex: 00.000.000/0000-00');
+                return;
+            }
+            validateField(cnpjInput, ''); 
+
+            try {
+                const url = `https://brasilapi.com.br/api/cnpj/v1/${rawCNPJ}`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.status === 404 || data.error || data.message === "CNPJ inválido") {
+                    validateField(cnpjInput, 'CNPJ não encontrado ou inválido na Receita Federal.');
+                    return;
+                }
+                
+                // Preenche campos
+                if (nomeInput) nomeInput.value = data.razao_social || '';
+                if (enderecoInput) enderecoInput.value = `${data.logradouro || ''}, ${data.numero || ''} - ${data.bairro || ''}`;
+                if (cepInput) cepInput.value = data.cep ? data.cep.replace(/(\d{5})(\d{3})/, '$1-$2') : '';
+                if (estadoInput) estadoInput.value = data.uf || '';
+                if (telefoneInput) {
+                    const ddd = data.ddd_telefone_1 || data.ddd_telefone_2 || '';
+                    const tel = data.telefone_1 || data.telefone_2 || '';
+                    if (ddd && tel) {
+                        telefoneInput.value = `(${ddd}) ${tel}`;
+                        // Dispara evento para máscara ser aplicada
+                        telefoneInput.dispatchEvent(new Event('input')); 
+                    }
+                }
+                if (emailInput) emailInput.value = data.email || '';
+
+                validateField(cnpjInput, '');
+
+                if (cepInput && cepInput.value) {
+                    fetchCEP();
+                }
+
+            } catch (error) {
+                console.error('Erro ao buscar CNPJ:', error);
+                validateField(cnpjInput, 'Erro na comunicação com a API de CNPJ.');
+            }
+        }
+        
+        /**
+         * Busca dados de CEP na ViaCEP e preenche campos de endereço.
+         */
+        async function fetchCEP() {
+            if (!cepInput) return;
+            
+            const rawCEP = cepInput.value.replace(/\D/g, '');
+
+            if (rawCEP.length !== 8) {
+                validateField(cepInput, 'CEP deve ter 8 dígitos. Ex: 00000-000');
+                return;
+            }
+            validateField(cepInput, '');
+
+            try {
+                const url = `https://viacep.com.br/ws/${rawCEP}/json/`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.erro) {
+                    validateField(cepInput, 'CEP não encontrado ou inválido.');
+                    return;
+                }
+                
+                if (enderecoInput && !enderecoInput.value.includes(data.logradouro) && data.logradouro) {
+                    enderecoInput.value = `${data.logradouro}, ${data.bairro} - ${data.localidade}`;
+                }
+
+                if (estadoInput && data.uf) estadoInput.value = data.uf;
+
+                validateField(cepInput, '');
+
+            } catch (error) {
+                console.error('Erro ao buscar CEP:', error);
+                validateField(cepInput, 'Erro na comunicação com a API de CEP.');
+            }
+        }
+
+        /** Aplica máscara genérica (apenas números com formatador) */
+        function applyMask(input, mask, placeholder) {
+            if (!input) return;
+            input.addEventListener('input', (e) => {
+                let value = e.target.value.replace(/\D/g, ''); 
+                let masked = '';
+                let i = 0;
+                let j = 0;
+
+                while (j < value.length && i < mask.length) {
+                    if (mask[i] === '#') {
+                        masked += value[j];
+                        j++;
+                    } else {
+                        masked += mask[i];
+                    }
+                    i++;
+                }
+                e.target.value = masked;
+            });
+            input.setAttribute('placeholder', placeholder);
+        }
+
+        const currencyInputs = document.querySelectorAll('.currency-mask');
+
+    function applyCurrencyMask(event) {
+        let input = event.target;
+        
+        // 1. Limpeza Inicial: Remove tudo exceto dígitos e vírgula
+        let value = input.value.replace(/[^0-9,]/g, '');
+        
+        // 2. Separa a parte inteira e a decimal (centavos)
+        let parts = value.split(',');
+        let integerPart = parts[0];
+        let decimalPart = parts.length > 1 ? ',' + parts[1].substring(0, 2) : ''; // Limita a 2 decimais
+
+        // **3. Remoção de Zeros à Esquerda (Melhoria)**
+        // Remove zeros à esquerda (ex: "00123" vira "123"), mas mantém "0" se for o caso.
+        if (integerPart.length > 1 && integerPart.startsWith('0')) {
+            integerPart = integerPart.replace(/^0+(?=\d)/, '');
+        }
+        if (integerPart === "") { // Garante que, se for só centavos, comece com zero.
+             integerPart = "0";
+        }
+
+        
+        // 4. Formatação de Milhar: Adiciona pontos a cada 3 dígitos
+        let formattedInteger = '';
+        const len = integerPart.length;
+        for (let i = 0; i < len; i++) {
+            formattedInteger = integerPart[len - 1 - i] + formattedInteger;
+            if (i > 0 && (i + 1) % 3 === 0 && i !== len - 1) {
+                formattedInteger = '.' + formattedInteger;
+            }
+        }
+
+        // 5. Concatena e adiciona o prefixo R$
+        let finalValue = 'R$ ' + formattedInteger + decimalPart;
+        
+        input.value = finalValue;
+    }
+
+    const inputValor = document.getElementById('valor_contrato'); 
+        
+        // Se estiver usando WTForms/Flask-WTF, o ID do campo será 'valor_contrato'.
+        // Se o ID for diferente no seu HTML, ajuste a linha acima.
+        if (inputValor) {
+            
+            // Função para remover caracteres não numéricos, exceto vírgula
+            const cleanValue = (value) => {
+                // Remove R$ e espaços, mantendo apenas números e vírgula/ponto
+                return value.replace('R$ ', '').trim(); 
+            };
+
+            const formatCurrency = (value) => {
+                // 1. Limpa o valor (remove R$ e espaços)
+                let cleaned = cleanValue(value).replace(/\D/g, ''); 
+
+                // 2. Se o valor estiver vazio, retorna a base da moeda
+                if (!cleaned) return 'R$ 0,00';
+
+                // 3. Converte para string e padroniza para centavos
+                let temp = cleaned.padStart(3, '0');
+
+                // 4. Separa reais de centavos
+                let real = temp.slice(0, -2);
+                let centavos = temp.slice(-2);
+
+                // 5. Adiciona separadores de milhar (ponto)
+                real = real.replace(/^0+/, ''); // Remove zeros à esquerda
+                real = real || '0'; 
+                real = real.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+
+                // 6. Monta a string final
+                return `R$ ${real},${centavos}`;
+            };
+
+            inputValor.addEventListener('input', (e) => {
+                // Impede o cursor de ir para o início ao formatar
+                const start = inputValor.selectionStart;
+                const end = inputValor.selectionEnd;
+                
+                // Aplica a formatação
+                e.target.value = formatCurrency(e.target.value);
+                
+                // Tenta manter o cursor na posição correta (ajustando pela adição de R$ e formatação)
+                if (e.inputType === 'deleteContentBackward') {
+                    // Se for backspace, move um pouco para trás, a máscara cuida do resto
+                    inputValor.setSelectionRange(start, end);
+                } else {
+                     // Para entrada normal, move para o final para digitar centavos
+                    const newLength = e.target.value.length;
+                    inputValor.setSelectionRange(newLength, newLength);
+                }
+
+                // Garante que o usuário não consiga remover o R$
+                if (!e.target.value.startsWith('R$')) {
+                    e.target.value = 'R$ 0,00';
+                }
+            });
+
+            // Garante a formatação inicial ao carregar a página
+            if (!inputValor.value.startsWith('R$')) {
+                inputValor.value = formatCurrency(inputValor.value || '0');
+            }
+            
+            // Previne apagar o R$ no início com delete/backspace
+            inputValor.addEventListener('keydown', (e) => {
+                // Verifica se a tecla pressionada é backspace (8) ou delete (46)
+                if (e.keyCode === 8 || e.keyCode === 46) {
+                    const start = inputValor.selectionStart;
+                    const end = inputValor.selectionEnd;
+
+                    // Se a seleção ou o cursor estiver dentro da área 'R$ ', bloqueia a ação
+                    if (start <= 3 && end <= 3) {
+                        e.preventDefault();
+                    }
+                }
+            });
+        }
+
+    // Inicializa a máscara nos campos
+    currencyInputs.forEach(input => {
+        // Dispara o evento de input artificialmente no carregamento 
+        // para formatar o valor inicial vindo do Python
+        input.dispatchEvent(new Event('input')); 
+        
+        // Adiciona o listener para o usuário digitar
+        input.addEventListener('input', applyCurrencyMask);
+    });
+    
+    // Você ainda pode manter a lógica genérica para outros campos se quiser,
+    // mas ela não deve ser usada no campo de valor do contrato.
+    /*
+    // Lógica Genérica Antiga (se necessária para outros campos)
+    const telefoneInput = document.getElementById('telefone');
+    if (telefoneInput) {
+        applyMask(telefoneInput, '(##) #####-####', '(99) 99999-9999');
+    }
+    */
+
+
+        
+
+        // ===========================================
+        // LÓGICA PRINCIPAL (Após o DOM ser carregado)
+        // ===========================================
+        document.addEventListener('DOMContentLoaded', function() {
+            const body = document.body;
+            const toggleContrast = document.getElementById('toggle-contrast');
+            const increaseFont = document.getElementById('increase-font');
+            const decreaseFont = document.getElementById('decrease-font');
+
+            // --- ACESSIBILIDADE ---
+            if (localStorage.getItem('highContrast') === 'true') {
+                body.classList.add('high-contrast');
+            }
+            if (localStorage.getItem('fontSize')) {
+                body.style.setProperty('--font-size-base', localStorage.getItem('fontSize'));
+            } else {
+                body.style.setProperty('--font-size-base', '16px');
+            }
+
+            if(toggleContrast) {
+                toggleContrast.addEventListener('click', () => {
+                    body.classList.toggle('high-contrast');
+                    const isHighContrast = body.classList.contains('high-contrast');
+                    localStorage.setItem('highContrast', isHighContrast);
+                });
+            }
+
+            function adjustFontSize(change) {
+                let currentSizePx = parseFloat(window.getComputedStyle(body).getPropertyValue('--font-size-base'));
+                if (isNaN(currentSizePx) || currentSizePx === 0) {
+                    currentSizePx = 16;
+                }
+                
+                let newSizePx = currentSizePx + change;
+                
+                if (newSizePx < 12) newSizePx = 12;
+                if (newSizePx > 24) newSizePx = 24;
+
+                const newSize = `${newSizePx}px`;
+                body.style.setProperty('--font-size-base', newSize);
+                localStorage.setItem('fontSize', newSize);
+            }
+
+            if(increaseFont) {
+                increaseFont.addEventListener('click', () => adjustFontSize(1));
+            }
+            if(decreaseFont) {
+                decreaseFont.addEventListener('click', () => adjustFontSize(-1));
+            }
+
+            // --- MÁSCARAS ---
+            
+            // Máscara de CNPJ
+            if (cnpjInput) {
+                applyMask(cnpjInput, '##.###.###/####-##', '00.000.000/0000-00');
+                cnpjInput.addEventListener('blur', (e) => {
+                    const cleanValue = e.target.value.replace(/\D/g, '');
+                    validateField(cnpjInput, cleanValue.length > 0 && cleanValue.length !== 14 ? 'CNPJ deve ter 14 dígitos.' : '');
+                });
+            }
+            
+            // Máscara de CEP
+            if (cepInput) {
+                applyMask(cepInput, '#####-###', '00000-000');
+                cepInput.addEventListener('blur', (e) => {
+                    const cleanValue = e.target.value.replace(/\D/g, '');
+                    validateField(cepInput, cleanValue.length > 0 && cleanValue.length !== 8 ? 'CEP deve ter 8 dígitos.' : '');
+                });
+            }
+            
+            // Máscara de Telefone (Flexível: Fixo/Celular)
+            if (telefoneInput) {
+                telefoneInput.addEventListener('input', (e) => {
+                    let value = e.target.value.replace(/\D/g, '');
+                    let masked = '';
+                    
+                    if (value.length > 0) masked += '(' + value.substring(0, 2);
+                    if (value.length > 2) masked += ') ';
+
+                    if (value.length > 6) {
+                        if (value.length > 10) { 
+                            masked += value.substring(2, 7) + '-' + value.substring(7, 11);
+                        } else { 
+                            masked += value.substring(2, 6) + '-' + value.substring(6, 10);
+                        }
+                    } else if (value.length > 2) {
+                        masked += value.substring(2);
+                    }
+
+                    e.target.value = masked.substring(0, 15);
+                    validateField(telefoneInput, value.length < 10 && value.length > 0 ? 'Telefone deve ter 10 ou 11 dígitos (com DDD).' : '');
+                });
+                telefoneInput.setAttribute('placeholder', '(00) 00000-0000');
+            }
+
+            // Máscara para Valor do Contrato (R$ 0.000,00)
+    if (valorContratoInput) {
+        valorContratoInput.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/[^\d]/g, '');
+            if (value === '') {
+                e.target.value = '';
+                return;
+            }
+
+            let cents = value.padStart(3, '0');
+            let integerPart = cents.slice(0, -2);
+            let decimalPart = cents.slice(-2);
+
+            // CORREÇÃO: Removemos zeros à esquerda ANTES de adicionar o separador de milhares
+            integerPart = cleanLeadingZero(integerPart);
+
+            // Adiciona o separador de milhares
+            integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            
+            e.target.value = `R$ ${integerPart},${decimalPart}`;
+        });
+
+        // Adiciona a formatação inicial ao carregar a página
+        // Isso simula o evento 'input' para garantir que o valor do Jinja seja limpo pelo JS
+        valorContratoInput.dispatchEvent(new Event('input'));
+
+            }
+
+            // Validação simples de Email ao perder o foco
+            if (emailInput) {
+                emailInput.addEventListener('blur', (e) => {
+                    const value = e.target.value.trim();
+                    validateField(emailInput, value.length > 0 && !regexEmail.test(value) ? 'O formato do e-mail é inválido.' : '');
+                });
+            }
+
+            // --- LISTENERS DE API ---
+            
+            // CNPJ: Busca e Validação ao sair do campo
+            if (cnpjInput) {
+                cnpjInput.addEventListener('blur', fetchCNPJ);
+            }
+            // CEP: Busca e Validação ao sair do campo
+            if (cepInput) {
+                cepInput.addEventListener('blur', fetchCEP);
+            }
+
+            // EMAIL: Validação em tempo real
+            if (emailInput) {
+                emailInput.addEventListener('input', (e) => {
+                    if (e.target.value.length > 0 && !regexEmail.test(e.target.value)) {
+                        validateField(emailInput, 'Formato de email inválido.');
+                    } else {
+                        validateField(emailInput, '');
+                    }
+                });
+            }
+            
+            // TELEFONE: Validação ao sair (garante o número mínimo)
+            if (telefoneInput) {
+                telefoneInput.addEventListener('blur', (e) => {
+                    const rawValue = e.target.value.replace(/\D/g, '');
+                    if (rawValue.length > 0 && rawValue.length < 10) {
+                        validateField(telefoneInput, 'Telefone deve ter 10 ou 11 dígitos (com DDD).');
+                    } else {
+                        validateField(telefoneInput, '');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
