@@ -1,7 +1,8 @@
 import unittest
-from app import app as flask_app, db 
+from app import app as flask_app, db, User # Importe seu modelo User se existir
 from app import ContratCond as Contrato 
 from datetime import date
+from flask_login import login_user
 
 class ContractAppTestCase(unittest.TestCase):
 
@@ -10,6 +11,8 @@ class ContractAppTestCase(unittest.TestCase):
         self.app.config['TESTING'] = True
         self.app.config['WTF_CSRF_ENABLED'] = False 
         self.app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:' 
+        # A linha abaixo desativa o @login_required apenas para os testes
+        self.app.config['LOGIN_DISABLED'] = True 
         self.client = self.app.test_client()
 
         with self.app.app_context():
@@ -47,10 +50,10 @@ class ContractAppTestCase(unittest.TestCase):
         
         with self.app.app_context():
             contrato = Contrato.query.filter_by(nome='CONDOMINIO TESTE').first()
-            self.assertIsNotNone(contrato, "O contrato não foi salvo. Verifique se o formulário no app.py valida todos os campos.")
+            self.assertIsNotNone(contrato)
 
     def test_03_search_functionality(self):
-        """Testa a busca garantindo que o objeto tenha abrangencia_contrato."""
+        """Testa a busca."""
         with self.app.app_context():
             c = Contrato(
                 nome="BUSCA_TARGET", 
@@ -60,7 +63,7 @@ class ContractAppTestCase(unittest.TestCase):
                 estado="SP",
                 telefone="1199999999",
                 email="busca@teste.com",
-                abrangencia_contrato="Total", # ADICIONADO AQUI
+                abrangencia_contrato="Total",
                 valor_contrato=100.0, 
                 inicio_contrato=date(2025,1,1)
             )
@@ -72,7 +75,7 @@ class ContractAppTestCase(unittest.TestCase):
             self.assertIn(b"BUSCA_TARGET", response.data)
 
     def test_04_delete_contract(self):
-        """Testa a exclusão garantindo que o objeto tenha abrangencia_contrato."""
+        """Testa a exclusão de contrato (contornando @login_required)."""
         with self.app.app_context():
             c = Contrato(
                 nome="DELETAR", 
@@ -82,7 +85,7 @@ class ContractAppTestCase(unittest.TestCase):
                 estado="SP",
                 telefone="1199999999",
                 email="delete@teste.com",
-                abrangencia_contrato="Total", # ADICIONADO AQUI
+                abrangencia_contrato="Total",
                 valor_contrato=100.0, 
                 inicio_contrato=date(2025,1,1)
             )
@@ -90,12 +93,14 @@ class ContractAppTestCase(unittest.TestCase):
             db.session.commit()
             contrato_id = c.id
 
+        # Como LOGIN_DISABLED = True no setUp, o @login_required será ignorado aqui
         response = self.client.post(f'/delete/{contrato_id}', follow_redirects=True)
         self.assertEqual(response.status_code, 200)
 
         with self.app.app_context():
-            contrato = Contrato.query.get(contrato_id)
-            self.assertIsNone(contrato)
+            # Usando db.session.get (v2.0+) para evitar o warning anterior
+            contrato = db.session.get(Contrato, contrato_id)
+            self.assertIsNone(contrato, "O contrato ainda existe. O @login_required pode estar bloqueando o teste.")
 
 if __name__ == '__main__':
     unittest.main()
