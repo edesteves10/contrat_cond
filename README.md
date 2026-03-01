@@ -1,6 +1,8 @@
 # contrat_cond
  Desenvolvimento de um software com framework web que utilize noções de banco de dados, praticando controle de versão.
 
+![Python application - CI](https://github.com/edesteves10/contrat_cond/actions/workflows/python-app.yml/badge.svg)
+
 ## 🛠️ Tecnologias Utilizadas
 
 | Tecnologia | Descrição |
