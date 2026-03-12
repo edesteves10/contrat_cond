@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white">
+            <h4 class="mb-0 text-primary">📊 Análise de Demanda - M.A. Automação</h4>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">Volume de contratos por tipo de serviço (Abrangência).</p>
+            <div style="position: relative; height:40vh; width:100%">
+                <canvas id="chartProdutos"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('chartProdutos');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ labels|tojson }},
+            datasets: [{
+                label: 'Quantidade de Contratos',
+                data: {{ valores|tojson }},
+                backgroundColor: '#3498db',
+                borderColor: '#2980b9',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+</script>
+{% endblock %}

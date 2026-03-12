@@ -6,6 +6,7 @@ import requests
 from decimal import Decimal
 from datetime import datetime
 import sqlite3
+from sqlalchemy import func # Importante estar no topo do arquivo
 from flask import Flask, render_template, request, redirect, url_for, send_file, flash, session, jsonify, make_response
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -14,7 +15,7 @@ from flask_wtf import FlaskForm
 from flask_migrate import Migrate # Certifique-se de que está importado
 from wtforms import StringField, DateField, DecimalField, SelectField, SubmitField, EmailField, PasswordField, TextAreaField
 from wtforms.validators import DataRequired, Length, Regexp, Optional, Email, EqualTo, ValidationError
-
+from models import Contrato # Ajuste conforme o nome da classe no seu models.py
 # ReportLab e PIL
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter, A4
@@ -469,7 +470,21 @@ def buscar_cnpj(cnpj):
     except Exception as e:
         return jsonify({"status": "ERROR", "message": str(e)}), 500
 
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    # Buscando os dados para o gráfico de produtos (Abrangência)
+    # Aqui usamos o campo exato que aparece no seu PDF
+    stats = db.session.query(
+        Contrato.abrangencia, 
+        func.count(Contrato.id)
+    ).group_by(Contrato.abrangencia).all()
 
+    # Organizando os dados para o gráfico
+    labels = [item[0] if item[0] else "Outros" for item in stats]
+    valores = [item[1] for item in stats]
+
+    return render_template('dashboard.html', labels=labels, valores=valores)
 # --- ROTA DE GERAÇÃO DE PDF (Unificada e Corrigida) ---
 
 # Rota mantida com o nome da Parte 2 (a mais completa)
