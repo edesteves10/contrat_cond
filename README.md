@@ -1,18 +1,31 @@
-# contrat_cond
- Desenvolvimento de um software com framework web que utilize noções de banco de dados, praticando controle de versão.
+# Sistema de Gestão de Contratos - M.A. Automação
 
-![Python application - CI](https://github.com/edesteves10/contrat_cond/actions/workflows/python-app.yml/badge.svg)
+Desenvolvimento de um software com framework web que utiliza noções de banco de dados, praticando controle de versão e segurança da informação. Este projeto faz parte do portfólio acadêmico para a UNIVESP.
 
-## 🛠️ Tecnologias Utilizadas
+<p align="center">
+  <img src="dashboard.png" alt="Dashboard M.A. Automação" width="800">
+</p>
 
-| Tecnologia | Descrição |
-| :--- | :--- |
-| **Python 3.13** | Linguagem de programação principal. |
-| **Flask** | Framework web para o desenvolvimento da aplicação. |
-| **SQLAlchemy** | ORM para mapeamento e manipulação do banco de dados. |
-| **SQLite** | Banco de dados relacional leve para armazenamento local. |
-| **Flask-WTF** | Integração com WTForms para validação de formulários. |
-| **Flask-Login** | Gerenciamento de autenticação e sessões de usuário. |
-| **Pytest** | Framework utilizado para os testes automatizados. |
-| **GitHub Actions** | Pipeline de CI para execução automática de testes em cada push. |
-| **WeasyPrint** | Biblioteca para geração de relatórios em PDF. |
+## 🚀 Funcionalidades
+* **Dashboard de Gestão**: Visualização centralizada de contratos com busca por Razão Social, CNPJ ou CEP.
+* **Interface Otimizada**: Tabela com rolagem vertical e botões de ação (PDF, Cláusulas, Editar, Excluir) integrados.
+* **Geração de Documentos**: Exportação de contratos em PDF utilizando a biblioteca WeasyPrint.
+* **Localização Brasileira**: Exibição de valores em Real (R$) e datas no formato DD/MM/AAAA.
+
+## 🛠️ Tecnologias
+* **Linguagem**: Python 3.x.
+* **Framework Web**: Flask.
+* **Banco de Dados**: SQLAlchemy (gerenciando SQLite/PostgreSQL).
+* **Estilização**: HTML5 e CSS3 customizado para melhor usabilidade.
+
+## 🛡️ Segurança e Manutenção (Destaque Acadêmico)
+Este projeto mantém um alto padrão de manutenção preventiva:
+* **Dependabot Ativo**: Monitoramento automático de vulnerabilidades em dependências de terceiros.
+* **Resolução de Conflitos**: Recentemente, o projeto passou por uma refatoração para atualizar bibliotecas críticas como `urllib3 (2.6.3)`, `Flask (3.1.1)` e `WeasyPrint (68.0)`, garantindo a proteção contra falhas de segurança conhecidas.
+* **Integração Contínua**: Uso de GitHub Actions para validação de código.
+
+## ⚙️ Como Instalar
+1. Clone o repositório.
+2. Crie um ambiente virtual: `python -m venv venv`.
+3. Ative o venv e instale as dependências: `pip install -r requirements.txt`.
+4. Inicie o servidor: `flask run`.
