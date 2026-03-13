@@ -4,7 +4,7 @@ from io import BytesIO
 import re
 import requests
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, timedelta
 import sqlite3
 from sqlalchemy import func # Importante estar no topo do arquivo
 from flask import Flask, render_template, request, redirect, url_for, send_file, flash, session, jsonify, make_response
@@ -470,21 +470,86 @@ def buscar_cnpj(cnpj):
     except Exception as e:
         return jsonify({"status": "ERROR", "message": str(e)}), 500
 
+
+from sqlalchemy import func # Certifique-se de que o func está importado
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # Buscando os dados para o gráfico de produtos (Abrangência)
-    # Aqui usamos o campo exato que aparece no seu PDF
-    stats = db.session.query(
-        Contrato.abrangencia, 
-        func.count(Contrato.id)
-    ).group_by(Contrato.abrangencia).all()
+    # 1. Obter datas dos filtros
+    data_inicio = request.args.get('data_inicio')
+    data_fim = request.args.get('data_fim')
 
-    # Organizando os dados para o gráfico
-    labels = [item[0] if item[0] else "Outros" for item in stats]
-    valores = [item[1] for item in stats]
+    # 2. Criar a query base
+    query = ContratCond.query
 
-    return render_template('dashboard.html', labels=labels, valores=valores)
+    # 3. Aplicar filtros se as datas existirem
+    if data_inicio:
+        query = query.filter(ContratCond.data_criacao >= data_inicio)
+    if data_fim:
+        query = query.filter(ContratCond.data_criacao <= data_fim)
+
+    # Executa a query para obter a lista de contratos e calcular o financeiro
+    contratos_filtrados = query.all()
+    total_financeiro = sum(c.valor_contrato for c in contratos_filtrados if c.valor_contrato)
+
+    # --- 1. DADOS PARA O GRÁFICO DE REAJUSTE (ROSCA) ---
+    # Ajustado para usar 'tipo_indice' conforme seu modelo
+    stats_reajuste = query.with_entities(
+        ContratCond.tipo_indice, func.count(ContratCond.id)
+    ).group_by(ContratCond.tipo_indice).all()
+    
+    labels_reajuste = [item[0] if item[0] else "Não Informado" for item in stats_reajuste]
+    valores_reajuste = [item[1] for item in stats_reajuste]
+
+    # --- 2. ALERTAS DE VENCIMENTO (PRÓXIMOS 30 DIAS) ---
+    # Ajustado para usar 'termino_contrato' conforme seu modelo
+    hoje = datetime.now()
+    prazo_30 = hoje + timedelta(days=30)
+    alertas_vencimento = ContratCond.query.filter(
+        ContratCond.termino_contrato >= hoje,
+        ContratCond.termino_contrato <= prazo_30
+    ).all()
+
+    # --- PROCESSAMENTO DOS GRÁFICOS ---
+
+    # Gráfico: Produtos
+    stats_produtos = query.with_entities(
+        ContratCond.abrangencia_contrato, 
+        func.count(ContratCond.id)
+    ).group_by(ContratCond.abrangencia_contrato).all()
+    labels_prod = [item[0] if item[0] else "Outros" for item in stats_produtos]
+    valores_prod = [item[1] for item in stats_produtos]
+
+    # Gráfico: Estados
+    stats_regioes = query.with_entities(
+        ContratCond.estado, 
+        func.count(ContratCond.id)
+    ).group_by(ContratCond.estado).all()
+    labels_regiao = [item[0] if item[0] else "N/A" for item in stats_regioes]
+    valores_regiao = [item[1] for item in stats_regioes]
+
+    # Gráfico: Evolução Mensal
+    stats_mensal = query.with_entities(
+        func.strftime('%m/%Y', ContratCond.data_criacao), 
+        func.count(ContratCond.id)
+    ).group_by(func.strftime('%m/%Y', ContratCond.data_criacao)).all()
+    labels_mensal = [item[0] for item in stats_mensal]
+    valores_mensal = [item[1] for item in stats_mensal]
+
+# 4. Busca os 5 contratos mais recentes criados (Mantenha o alinhamento/indentação!)
+    top_5_recentes = ContratCond.query.order_by(ContratCond.data_criacao.desc()).limit(5).all()
+
+    # 5. Retornar TUDO para o template (Adicionando a nova variável na lista)
+    return render_template('dashboard.html', 
+                           labels_prod=labels_prod, valores_prod=valores_prod,
+                           labels_regiao=labels_regiao, valores_regiao=valores_regiao,
+                           labels_mensal=labels_mensal, valores_mensal=valores_mensal,
+                           total_financeiro=total_financeiro,
+                           labels_reajuste=labels_reajuste, valores_reajuste=valores_reajuste,
+                           alertas_vencimento=alertas_vencimento,
+                           top_5_recentes=top_5_recentes) # <--- ESSA LINHA É FUNDAMENTAL
+
 # --- ROTA DE GERAÇÃO DE PDF (Unificada e Corrigida) ---
 
 # Rota mantida com o nome da Parte 2 (a mais completa)

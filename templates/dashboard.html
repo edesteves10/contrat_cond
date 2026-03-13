@@ -1,39 +1,207 @@
-{% extends "base.html" %}
-{% block content %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Estratégico - M.A. Automação</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        @media print {
+            /* Esconde botões e formulários na hora de imprimir */
+            .btn, form, .btn-outline-secondary {
+                display: none !important;
+            }
+            /* Ajusta o fundo para economizar tinta e ficar legível */
+            body {
+                background-color: white !important;
+            }
+            .card {
+                border: 1px solid #dee2e6 !important;
+                box-shadow: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-light">
+
 <div class="container mt-4">
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-white">
-            <h4 class="mb-0 text-primary">📊 Análise de Demanda - M.A. Automação</h4>
-        </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary">📊 Painel Estratégico - M.A. Automação</h2>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-sm">Voltar para Início</a>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
         <div class="card-body">
-            <p class="text-muted">Volume de contratos por tipo de serviço (Abrangência).</p>
-            <div style="position: relative; height:40vh; width:100%">
-                <canvas id="chartProdutos"></canvas>
+            <form method="GET" action="{{ url_for('dashboard') }}" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">Data Inicial</label>
+                    <input type="date" name="data_inicio" class="form-control" value="{{ request.args.get('data_inicio', '') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">Data Final</label>
+                    <input type="date" name="data_fim" class="form-control" value="{{ request.args.get('data_fim', '') }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                </div>
+                <div class="col-md-2">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary w-100">Limpar</a>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" onclick="window.print()" class="btn btn-success w-100">
+                        <i class="bi bi-file-earmark-pdf"></i> Exportar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 bg-primary text-white h-100">
+                <div class="card-body">
+                    <h6 class="text-uppercase mb-1" style="font-size: 0.8rem; opacity: 0.8;">Total de Contratos Ativos</h6>
+                    <h3 class="mb-0">{{ valores_prod|sum }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 bg-success text-white h-100">
+                <div class="card-body">
+                    <h6 class="text-uppercase mb-1" style="font-size: 0.8rem; opacity: 0.8;">Valor Total em Carteira</h6>
+                    <h3 class="mb-0">R$ {{ "{:,.2f}".format(total_financeiro).replace(',','v').replace('.',',').replace('v','.') }}</h3>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    const ctx = document.getElementById('chartProdutos');
-    new Chart(ctx, {
-        type: 'bar',
+    <div class="row mb-4">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-0 pt-3"><h5 class="card-title mb-0">Volume por Produto</h5></div>
+                <div class="card-body"><div style="height:250px;"><canvas id="chartProdutos"></canvas></div></div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-0 pt-3"><h5 class="card-title mb-0">Demanda por Região</h5></div>
+                <div class="card-body"><div style="height:250px;"><canvas id="chartRegioes"></canvas></div></div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-0 pt-3"><h5 class="card-title mb-0">Índices de Reajuste</h5></div>
+                <div class="card-body"><div style="height:250px;"><canvas id="chartReajuste"></canvas></div></div>
+            </div>
+        </div>
+    </div>
+
+    {% if alertas_vencimento %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card border-0 shadow-sm border-start border-warning border-4">
+                <div class="card-body">
+                    <h5 class="text-warning"><i class="bi bi-exclamation-triangle-fill"></i> Atenção: Contratos Vencendo (30 dias)</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Condomínio</th>
+                                    <th>Produto</th>
+                                    <th>Vencimento</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for contrato in alertas_vencimento %}
+                                <tr>
+                                    <td>{{ contrato.nome }}</td>
+                                    <td>{{ contrato.abrangencia_contrato }}</td>
+                                    <td class="text-danger fw-bold">{{ contrato.termino_contrato.strftime('%d/%m/%Y') }}</td>
+                                    <td>R$ {{ "{:,.2f}".format(contrato.valor_contrato).replace(',','v').replace('.',',').replace('v','.') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-0 pt-3"><h5 class="card-title mb-0">Evolução Mensal de Contratos</h5></div>
+                <div class="card-body"><div style="height:250px;"><canvas id="chartMensal"></canvas></div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h5 class="card-title mb-0"><i class="bi bi-star-fill text-warning"></i> Top 5 Contratos Recentes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr style="font-size: 0.9rem;">
+                                    <th>Condomínio</th>
+                                    <th>Abrangência</th>
+                                    <th>Início</th>
+                                    <th>Valor</th>
+                                    <th class="text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for contrato in top_5_recentes %}
+                                <tr>
+                                    <td class="fw-bold">{{ contrato.nome }}</td>
+                                    <td><span class="badge bg-light text-dark border">{{ contrato.abrangencia_contrato }}</span></td>
+                                    <td>{{ contrato.inicio_contrato.strftime('%d/%m/%Y') }}</td>
+                                    <td class="text-success fw-bold">R$ {{ "{:,.2f}".format(contrato.valor_contrato).replace(',','v').replace('.',',').replace('v','.') }}</td>
+                                    <td class="text-center">
+                                        <a href="{{ url_for('editar_contrato', contrato_id=contrato.id) }}" class="btn btn-sm btn-outline-primary py-0">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> <script>
+    const chartOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
+
+    // Bar Charts
+    new Chart(document.getElementById('chartProdutos'), { type: 'bar', data: { labels: {{ labels_prod|tojson }}, datasets: [{ data: {{ valores_prod|tojson }}, backgroundColor: '#3498db' }] }, options: chartOptions });
+    new Chart(document.getElementById('chartRegioes'), { type: 'bar', data: { labels: {{ labels_regiao|tojson }}, datasets: [{ data: {{ valores_regiao|tojson }}, backgroundColor: '#1abc9c' }] }, options: chartOptions });
+
+    // Gráfico de Rosca
+    new Chart(document.getElementById('chartReajuste'), {
+        type: 'doughnut',
         data: {
-            labels: {{ labels|tojson }},
-            datasets: [{
-                label: 'Quantidade de Contratos',
-                data: {{ valores|tojson }},
-                backgroundColor: '#3498db',
-                borderColor: '#2980b9',
-                borderWidth: 1
-            }]
+            labels: {{ labels_reajuste|tojson }},
+            datasets: [{ data: {{ valores_reajuste|tojson }}, backgroundColor: ['#e74c3c', '#f1c40f', '#9b59b6', '#34495e'] }]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-        }
+        options: { ...chartOptions, plugins: { legend: { display: true, position: 'bottom' } } }
+    });
+
+    // Line Chart
+    new Chart(document.getElementById('chartMensal'), {
+        type: 'line',
+        data: { labels: {{ labels_mensal|tojson }}, datasets: [{ label: 'Contratos', data: {{ valores_mensal|tojson }}, borderColor: '#e67e22', fill: true, tension: 0.3 }] },
+        options: { ...chartOptions, plugins: { legend: { display: true } } }
     });
 </script>
-{% endblock %}
+</body>
+</html>
