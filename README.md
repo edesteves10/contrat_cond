@@ -29,3 +29,16 @@ Este projeto mantém um alto padrão de manutenção preventiva:
 2. Crie um ambiente virtual: `python -m venv venv`.
 3. Ative o venv e instale as dependências: `pip install -r requirements.txt`.
 4. Inicie o servidor: `flask run`.
+
+---
+
+## 🎯 Objetivo do Projeto
+O **M.A. Automação** foi concebido para suprir a necessidade de organização e padronização na emissão de contratos condominiais. O foco principal foi a criação de uma ferramenta robusta que eliminasse erros manuais de preenchimento e garantisse que todos os documentos gerados seguissem as cláusulas jurídicas atualizadas, proporcionando agilidade e segurança jurídica para o síndico e para a administradora.
+
+## 🏁 Conclusão
+Através deste desenvolvimento, foi possível aplicar conceitos avançados de:
+1. **Persistência de Dados**: Modelagem eficiente para garantir a integridade das informações dos contratos.
+2. **Segurança de Software**: Manutenção proativa de dependências e resolução de vulnerabilidades críticas.
+3. **Experiência do Usuário (UX)**: Design de interface focado em produtividade, com tabelas dinâmicas e acesso rápido a funções essenciais.
+
+Este projeto representa um ciclo completo de desenvolvimento de software, desde a concepção da lógica de negócio até a implantação de práticas modernas de segurança e versionamento.
