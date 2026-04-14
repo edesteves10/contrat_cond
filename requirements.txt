@@ -37,7 +37,7 @@ psycopg2-binary==2.9.11
 pycparser==2.23
 pydyf==0.11.0
 pyphen==0.17.2
-pytest==8.3.5
+pytest==9.0.3
 reportlab==4.4.1
 requests==2.33.0
 sqlalchemy==2.0.39
