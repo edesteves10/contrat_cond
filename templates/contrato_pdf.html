@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M.A. Automação</title>
+    <!-- Adicionando Tailwind CSS para styling moderno -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos específicos para PDF (A4 e impressão) */
+        @page {
+            size: A4;
+            margin: 1cm 1.5cm;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            font-size: 10pt;
+            color: #333;
+            line-height: 1.5;
+        }
+        .container-pdf {
+            width: 100%;
+            margin: 0 auto;
+        }
+        .header-logo-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .logo-text {
+            font-weight: 700;
+            font-size: 16pt;
+            line-height: 1.2;
+            color: #000;
+        }
+        .main-title {
+            font-size: 18pt;
+            font-weight: 700;
+            text-align: center;
+            margin: 30px 0 20px 0;
+            text-transform: uppercase;
+        }
+        .info-table {
+            width: 100%;
+            margin-top: 20px;
+        }
+        .info-table td {
+            padding: 5px 0;
+            vertical-align: top;
+        }
+        .info-table .label {
+            font-weight: 600;
+            width: 45%; /* Ajuste a largura do label */
+        }
+        .info-table .value {
+            font-weight: 400;
+            padding-left: 10px;
+            width: 55%;
+        }
+        .signature-box {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            margin-top: 80px;
+            page-break-inside: avoid; /* Evita quebras de página dentro da caixa de assinatura */
+        }
+        .signature-line {
+            border-top: 1px solid #000;
+            padding-top: 5px;
+            width: 40%;
+            font-size: 9pt;
+        }
+        .footer-pdf {
+            position: running(footer); /* Usando paged media para rodapé */
+            /* Se estiver usando wkhtmltopdf, pode ser necessário usar o método --footer-html */
+            text-align: center;
+            border-top: 1px solid #ddd;
+            padding-top: 5px;
+            font-size: 8pt;
+        }
+        /* Definição de rodapé para CSS Paged Media (pode não funcionar em todos os geradores de PDF) */
+        @bottom-center {
+            content: element(footer);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-pdf">
+        
+        <!-- CABEÇALHO (Topo) - Ajustado conforme sua correção -->
+        <div class="header-logo-section">
+            <div class="flex items-center space-x-3">
+                <span class="logo-text">M.A. Automação</span>
+            </div>
+            <div class="text-right text-xs">
+                CNPJ: {{ contrato.cnpj_empresa_contratada }} 
+            </div>
+        </div>
+        
+        <!-- DATA DE EMISSÃO -->
+        <div class="text-right text-xs mt-3">
+            {{ contrato.local_contrato }}, {{ contrato.data_geracao_formatada }}
+        </div>
+
+        <!-- TÍTULO PRINCIPAL -->
+        <h1 class="main-title">Contrato de Prestação de Serviços</h1>
+        
+        <!-- DETALHES DA CONTRATADA -->
+        <div class="mt-8">
+            <h2 class="text-lg font-semibold mb-3">Dados da Contratada</h2>
+            <table class="info-table">
+                <tr>
+                    <td class="label">Nome da Empresa:</td>
+                    <td class="value">M.A. Automação</td>
+                </tr>
+                <tr>
+                    <td class="label">CNPJ:</td>
+                    <td class="value">{{ contrato.cnpj_empresa_contratada }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Telefone:</td>
+                    <td class="value">{{ contrato.telefone_empresa_contratada }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Email:</td>
+                    <td class="value">{{ contrato.email_empresa_contratada }}</td>
+                </tr>
+            </table>
+        </div>
+        
+        <!-- DETALHES DO CONTRATANTE E CONTRATO -->
+        <div class="mt-8">
+            <h2 class="text-lg font-semibold mb-3">Dados do Contratante e Contrato</h2>
+            <table class="info-table">
+                <tr>
+                    <td class="label">Nome/Razão Social:</td>
+                    <td class="value">{{ contrato.razao_social_contratante }}</td>
+                </tr>
+                <tr>
+                    <td class="label">CNPJ:</td>
+                    <td class="value">{{ contrato.cnpj_contratante }}</td>
+                </tr>
+                <tr>
+                    <!-- IMPORTANTE: O valor já deve vir formatado como string, ex: "R$ 1.500,00" -->
+                    <td class="label">Valor do Contrato:</td>
+                    <td class="value">{{ contrato.valor_contrato_formatado }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Início do Contrato:</td>
+                    <td class="value">{{ contrato.data_inicio_formatada }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Término do Contrato:</td>
+                    <td class="value">{{ contrato.data_termino_formatada }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Abrangência do Contrato:</td>
+                    <td class="value">{{ contrato.abrangencia }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Tipo de Índice de Reajuste:</td>
+                    <td class="value">{{ contrato.indice_reajuste }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- ENDEREÇO E CLÁUSULAS ADICIONAIS -->
+        <div class="mt-8">
+            <h2 class="text-lg font-semibold mb-3">Local e Cláusulas Adicionais</h2>
+            <p class="font-semibold mt-2">Endereço do Contratante:</p>
+            <p>Rua: {{ contrato.endereco_completo }}</p>
+            <p>CEP: {{ contrato.cep }} - {{ contrato.estado_uf }}</p>
+            
+            <p class="font-semibold mt-6">Cláusulas Adicionais:</p>
+            <!-- Renderiza as cláusulas adicionais, mantendo formatação de quebra de linha -->
+            <pre class="mt-2 whitespace-pre-wrap text-sm">{{ contrato.clausulas_adicionais }}</pre>
+            
+            <p class="mt-8 text-sm">Li e concordo com os termos e condições.</p>
+        </div>
+
+        <!-- SEÇÃO DE ASSINATURAS -->
+        <div class="signature-box">
+            <div class="signature-line">
+                Assinatura Empresa (M.A. Automação)
+            </div>
+            <div class="signature-line">
+                {{ contrato.razao_social_contratante }}<br>
+                Assinatura Contratante<br>
+                CNPJ: {{ contrato.cnpj_contratante }}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- RODAPÉ (AJUSTADO PARA A SUA VERSÃO CORRIGIDA) -->
+    <div class="footer-pdf">
+        <!-- Use as variáveis do seu sistema para o rodapé correto -->
+        {{ contrato.rodapé_informacoes_empresa }} 
+        <!-- Exemplo:  Rua: GIOVANNI DI BALDUCCIO, 402 - VILA MORAES, SAO PAULO - São Paulo - SP - CEP: 04170-000 | Tel: 1199441158.
+    </div>
+</body>
+</html>

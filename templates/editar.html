@@ -1,209 +1,95 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Contrato - ID {{ contrato.id }}</title>
+    <!-- Carrega o Tailwind CSS para estilização moderna e responsiva -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilização customizada para a fonte Inter */
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 sm:p-8">
 
-{% block title %}Editar Contrato{% endblock %}
+    <!-- Container Principal Centrado -->
+    <div class="max-w-4xl mx-auto bg-white p-6 sm:p-10 rounded-xl shadow-2xl border border-gray-200">
+        
+        <!-- ELEMENTO DE NAVEGAÇÃO SUPERIOR PARA VOLTAR -->
+        <a href="{{ url_for('index') }}" class="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-800 transition mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Voltar para Lista de Contratos
+        </a>
+        <!-- FIM DO ELEMENTO -->
 
-{% block content %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const valorContratoInput = document.getElementById('valor_contrato'); // Certifique-se que o ID é 'valor_contrato'
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b-4 border-indigo-500 pb-2">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-indigo-700">
+                Editar Contrato #{{ contrato.id }}
+            </h1>
+            
+            <!-- Botão de Download PDF -->
+            <a href="{{ url_for('download_contrato_pdf', id=contrato.id) }}" target="_blank"
+               class="mt-4 sm:mt-0 flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L10 11.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v7a1 1 0 11-2 0V6a1 1 0 011-1z" clip-rule="evenodd" />
+                </svg>
+                Gerar PDF
+            </a>
+        </div>
+        
+        <p class="text-gray-600 mb-8">
+            Preencha e salve as alterações no contrato.
+        </p>
 
-        if (valorContratoInput) {
-            // Função para formatar o número no padrão brasileiro (1.234,56)
-            function formatarMoeda(value) {
-                // 1. Limpar o valor: remover tudo que não é número ou vírgula
-                let cleanedValue = value.replace(/[^0-9,]/g, '');
+        <!-- Formulário de Edição -->
+        <form id="contractForm" method="POST" action="{{ url_for('editar_contrato', contrato_id=contrato.id) }}" class="space-y-6">
+            
+            <!-- Campo de Segurança (CSRF) - Importante para WTForms -->
+            {{ form.csrf_token }}
 
-                // 2. Lidar com a vírgula decimal
-                const parts = cleanedValue.split(',');
-                let integerPart = parts[0];
-                let decimalPart = parts.length > 1 ? ',' + parts[1].substring(0, 2) : ''; // Limita a 2 casas decimais
+            <!-- Exemplo de Campo de Formulário (Iterando sobre os campos) -->
+            {% for field in form if field.name != 'csrf_token' and field.type != 'SubmitField' %}
+                <div class="field-group">
+                    <!-- Rótulo do Campo -->
+                    <label for="{{ field.id }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ field.label.text }}
+                    </label>
+                    
+                    <!-- Campo de Entrada (Input, Textarea, etc.) -->
+                    {{ field(class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500", 
+                             placeholder=field.label.text) }}
 
-                // 3. Remover pontos de milhar existentes para reformatar
-                integerPart = integerPart.replace(/\./g, '');
+                    <!-- Exibir Erros de Validação -->
+                    {% if field.errors %}
+                        <ul class="mt-2 text-sm text-red-600 space-y-1">
+                            {% for error in field.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            {% endfor %}
 
-                // 4. Adicionar pontos de milhar a cada 3 dígitos da parte inteira
-                // Esta regex insere um ponto antes de cada grupo de 3 dígitos, exceto o primeiro,
-                // quando seguido por outros 3 dígitos e não no final da string.
-                integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            <!-- Botões de Ação -->
+            <div class="flex flex-col sm:flex-row justify-end pt-4 space-y-3 sm:space-y-0 sm:space-x-4 border-t pt-6">
+                
+                <!-- Botão de Voltar (já existente) -->
+                <a href="{{ url_for('index') }}" class="w-full sm:w-auto flex justify-center items-center px-6 py-3 border border-gray-300 shadow-sm text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                    Cancelar / Voltar
+                </a>
 
-                return integerPart + decimalPart;
-            }
-
-            // Event Listener para formatar enquanto o usuário digita
-            valorContratoInput.addEventListener('input', function(e) {
-                e.target.value = formatarMoeda(e.target.value);
-            });
-
-            // Formatar o valor inicial quando a página carrega (essencial para o modo de edição)
-            // O valor vem do Python/banco como "1234.56" (ponto decimal)
-            // Queremos exibi-lo como "1.234,56"
-            if (valorContratoInput.value) {
-                let initialValue = valorContratoInput.value;
-                // Converte o ponto decimal para vírgula ANTES de aplicar a formatação
-                initialValue = initialValue.replace('.', ',');
-                valorContratoInput.value = formatarMoeda(initialValue);
-            }
-        }
-    });
-</script>
-
-<h1>Editar Contrato</h1>
-
-<form method="POST">
-    {{ form.csrf_token }} {# Não esqueça do token CSRF! #}
-
-    {# Campo para o nome do contrato #}
-    <div class="form-group">
-        {{ form.nome.label }}
-        {{ form.nome(class="form-control") }}
-        {% if form.nome.errors %}
-            <div class="invalid-feedback d-block">
-                {% for error in form.nome.errors %}
-                    <span>{{ error }}</span>
-                {% endfor %}
+                <!-- Botão de Submissão -->
+                <button type="submit" class="w-full sm:w-auto flex justify-center items-center px-6 py-3 border border-transparent shadow-sm text-base font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                    Salvar Alterações
+                </button>
             </div>
-        {% endif %}
-    </div>
-    {# Campo para o CNPJ #}
-    <div class="form-group">
-        {{ form.cnpj.label }}
-        {{ form.cnpj(class="form-control") }}
-        {% if form.cnpj.errors %}
-            <div class="invalid-feedback d-block">
-                {% for error in form.cnpj.errors %}
-                    <span>{{ error }}</span>
-                {% endfor %}
-            </div>
-        {% endif %}
-    </div>
-    {# Campo para o endereço #}
-    <div class="form-group">
-        {{ form.endereco.label }}
-        {{ form.endereco(class="form-control") }}
-        {% if form.endereco.errors %}
-            <div class="invalid-feedback d-block">
-                {% for error in form.endereco.errors %}
-                    <span>{{ error }}</span>
-                {% endfor %}
-            </div>
-        {% endif %}
-    </div>
-    {# Campo para o CEP #}
-    <div class="form-group">
-        {{ form.cep.label }}
-        {{ form.cep(class="form-control") }}
-        {% if form.cep.errors %}
-            <div class="invalid-feedback d-block">
-                {% for error in form.cep.errors %}
-                    <span>{{ error }}</span>
-                {% endfor %}
-            </div>
-        {% endif %}
-    </div>
-    {# Campo para o estado #}
-    <div class="form-group">
-        {{ form.estado.label }}
-        {{ form.estado(class="form-control") }}
-        {% if form.estado.errors %}
-            <div class="invalid-feedback d-block">
-                {% for error in form.estado.errors %}
-                    <span>{{ error }}</span>
-                {% endfor %}
-            </div>
-        {% endif %}
-    </div>
-    {# Campo para o telefone #}
-    <div class="form-group">
-        {{ form.telefone.label }}
-        {{ form.telefone(class="form-control") }}
-        {% if form.telefone.errors %}
-            <div class="invalid-feedback d-block">
-                {% for error in form.telefone.errors %}
-                    <span>{{ error }}</span>
-                {% endfor %}
-            </div>
-        {% endif %}
-    </div>
-    {# Campo para o email #}
-    <div class="form-group">
-        {{ form.email.label }}
-        {{ form.email(class="form-control") }}
-        {% if form.email.errors %}
-            <div class="invalid-feedback d-block">
-                {% for error in form.email.errors %}
-                    <span>{{ error }}</span>
-                {% endfor %}
-            </div>
-        {% endif %}
+            
+        </form>
     </div>
 
-    {# Campo para o valor do contrato com formatação de moeda #}
-    <div class="form-group">
-        {{ form.valor_contrato.label }}
-        {{ form.valor_contrato(class="form-control") }}
-        {% if form.valor_contrato.errors %}
-            <div class="invalid-feedback d-block">
-                {% for error in form.valor_contrato.errors %}
-                    <span>{{ error }}</span>
-                {% endfor %}
-            </div>
-        {% endif %}
-    </div>
-
-    {# Campo para a data de início do contrato #}
-    <div class="form-group">
-        {{ form.inicio_contrato.label }}
-        {{ form.inicio_contrato(class="form-control") }}
-        {% if form.inicio_contrato.errors %}
-            <div class="invalid-feedback d-block">
-                {% for error in form.inicio_contrato.errors %}
-                    <span>{{ error }}</span>
-                {% endfor %}
-            </div>
-        {% endif %}
-    </div>
-
-    {# Campo para a data de término do contrato #}
-    <div class="form-group">
-        {{ form.termino_contrato.label }}
-        {{ form.termino_contrato(class="form-control") }}
-        {% if form.termino_contrato.errors %}
-            <div class="invalid-feedback d-block">
-                {% for error in form.termino_contrato.errors %}
-                    <span>{{ error }}</span>
-                {% endfor %}
-            </div>
-        {% endif %}
-    </div>
-
-    {# Campo para a abrangência do contrato #}
-    <div class="form-group">
-        {{ form.abrangencia_contrato.label }}
-        {{ form.abrangencia_contrato(class="form-control") }}
-        {% if form.abrangencia_contrato.errors %}
-            <div class="invalid-feedback d-block">
-                {% for error in form.abrangencia_contrato.errors %}
-                    <span>{{ error }}</span>
-                {% endfor %}
-            </div>
-        {% endif %}
-    </div>
-
-    {# Campo para o tipo de índice de reajuste #}
-    <div class="form-group">
-        {{ form.tipo_indice.label }}
-        {{ form.tipo_indice(class="form-control") }}
-        {% if form.tipo_indice.errors %}
-            <div class="invalid-feedback d-block">
-                {% for error in form.tipo_indice.errors %}
-                    <span>{{ error }}</span>
-                {% endfor %}
-            </div>
-        {% endif %}
-    </div>
-
-    <button type="submit" class="btn btn-primary" onclick="return confirm('Tem certeza que deseja salvar as alterações?')">Salvar</button>
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancelar</a>
-</form>
-
-{% endblock %}
+</body>
+</html>
