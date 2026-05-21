@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Usuário</title>
+    <!-- Incluindo Tailwind CSS para estilização rápida -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Personalização simples para garantir o uso da fonte Inter e fundo */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-md p-8 space-y-6 bg-white shadow-xl rounded-xl border border-gray-200">
+        <h1 class="text-3xl font-extrabold text-gray-900 text-center">
+            Cadastrar Conta
+        </h1>
+        
+        <!-- Exibição de mensagens flash (sucesso/erro) -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="space-y-2">
+                    {% for category, message in messages %}
+                        <div class="p-3 text-sm rounded-lg {% if category == 'success' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('register') }}" class="space-y-4">
+            <!-- Token CSRF é obrigatório com Flask-WTF -->
+            {{ form.hidden_tag() }}
+
+            <!-- Campo Usuário -->
+            <div>
+                {{ form.username.label(class="block text-sm font-medium text-gray-700") }}
+                {{ form.username(class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm", placeholder="Seu nome de usuário") }}
+                {% for error in form.username.errors %}
+                    <span class="text-xs text-red-500">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <!-- Campo Email -->
+            
+            
+            <!-- Campo Senha -->
+            <div>
+                {{ form.password.label(class="block text-sm font-medium text-gray-700") }}
+                {{ form.password(class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm", placeholder="Sua senha") }}
+                {% for error in form.password.errors %}
+                    <span class="text-xs text-red-500">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <!-- Campo Repita a Senha -->
+            <div>
+    {{ form.confirm_password.label(class="block text-sm font-medium text-gray-700") }}
+    {{ form.confirm_password(class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm", placeholder="Repita a senha") }}
+    {% for error in form.confirm_password.errors %}
+        <span class="text-xs text-red-500">{{ error }}</span>
+    {% endfor %}
+</div>
+
+            <!-- Botão de Cadastro -->
+            <div>
+                {{ form.submit(class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out") }}
+            </div>
+        </form>
+
+        <div class="text-center text-sm">
+            Já tem uma conta? 
+            <a href="{{ url_for('login') }}" class="font-medium text-indigo-600 hover:text-indigo-500">
+                Faça Login aqui.
+            </a>
+        </div>
+    </div>
+</body>
+</html>
