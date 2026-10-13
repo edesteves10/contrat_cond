@@ -49,6 +49,6 @@ virtualenv==20.36.1
 virtualenvwrapper-win==1.2.7
 weasyprint==68.0
 webencodings==0.5.1
-werkzeug==3.1.6
+werkzeug==3.1.9
 wtforms==3.2.1
 zopfli==0.2.3.post1
