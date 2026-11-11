@@ -30,7 +30,7 @@ markupsafe==3.0.2
 mypy_extensions==1.1.0
 packaging==24.2
 pathspec==1.0.0
-pillow==12.2.0
+pillow==12.3.0
 platformdirs==4.3.7
 pluggy==1.5.0
 psycopg2-binary==2.9.11
@@ -44,11 +44,11 @@ sqlalchemy==2.0.39
 tinycss2==1.5.0
 tinyhtml5==2.0.0
 typing_extensions==4.12.2
-urllib3==2.7.0
+urllib3==2.8.0
 virtualenv==20.36.1
 virtualenvwrapper-win==1.2.7
-weasyprint==68.0
+weasyprint==70.0
 webencodings==0.5.1
-werkzeug==3.1.6
+werkzeug==3.1.9
 wtforms==3.2.1
 zopfli==0.2.3.post1
