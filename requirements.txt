@@ -45,7 +45,7 @@ tinycss2==1.5.0
 tinyhtml5==2.0.0
 typing_extensions==4.12.2
 urllib3==2.8.0
-virtualenv==20.36.1
+virtualenv==21.14.13
 virtualenvwrapper-win==1.2.7
 weasyprint==70.0
 webencodings==0.5.1
