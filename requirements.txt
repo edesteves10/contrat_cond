@@ -29,7 +29,7 @@ Mako==1.4.3
 MarkupSafe==3.0.2
 mypy_extensions==1.1.0
 packaging==26.3
-pathspec==0.12.1
+pathspec==1.0.0
 pillow==13.0.0
 platformdirs==4.14.5
 pluggy==1.5.0
