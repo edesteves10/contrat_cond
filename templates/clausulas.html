@@ -1,9 +1,197 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualização de Cláusulas Contratuais</title>
+    <!-- Carrega o Tailwind CSS para estilização fácil e responsiva -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#1D4ED8', // Azul forte
+                        'secondary': '#FBBF24', // Amarelo
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Estilos personalizados para a visualização */
+        .clausula-card {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            cursor: pointer;
+        }
+        .clausula-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        /* Estilo para o conteúdo oculto */
+        .clausula-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+        .clausula-content.expanded {
+            /* Valor grande para garantir que o conteúdo seja exibido */
+            max-height: 500px; 
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans p-4 md:p-8">
 
-{% block title %}Cláusulas de Contrato{% endblock %}
+    <div class="max-w-4xl mx-auto">
+        <!-- NOVO BOTÃO/LINK PARA VOLTAR PARA A TELA PRINCIPAL (Assumindo que a raiz '/' é a tela principal) -->
+        <a href="/" class="inline-flex items-center text-base font-semibold text-gray-700 hover:text-primary transition mb-8 px-4 py-2 bg-white rounded-lg shadow-md border border-gray-200 hover:shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Voltar para a Lista de Contratos
+        </a>
+        
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-extrabold text-primary mb-2">Visualizador de Cláusulas</h1>
+            <p class="text-gray-600 text-lg">Clique em uma cláusula para expandir e ler os detalhes.</p>
+        </header>
 
-{% block content %}
-    <h1>Cláusulas de Contrato</h1>
-    <hr>
-    {{ clausulas|safe }}
-{% endblock %}
+        <!-- Container onde as cláusulas serão renderizadas -->
+        <div id="clausulas-container" class="space-y-4">
+            <!-- As cláusulas serão inseridas aqui pelo JavaScript -->
+        </div>
+
+        <!-- Mensagem de Confirmação/Alerta (substitui o alert()) -->
+        <div id="message-box" class="fixed bottom-4 right-4 bg-primary text-white p-4 rounded-lg shadow-xl hidden transition-opacity duration-300 opacity-0">
+            Ação executada com sucesso!
+        </div>
+    </div>
+
+    <script>
+        // Variáveis globais para configuração do Firebase (MANDATÓRIO)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Mock de dados das cláusulas para demonstração
+        const clausulasData = [
+            { id: 1, titulo: "Cláusula Primeira: Do Objeto Contratual", resumo: "Define o escopo e o propósito principal deste contrato.", texto: "O presente contrato tem por objeto a prestação de serviços de consultoria especializada em gestão de projetos, conforme detalhado no Anexo I. Quaisquer alterações neste objeto deverão ser formalizadas por aditivo contratual."},
+            { id: 2, titulo: "Cláusula Segunda: Da Remuneração e Forma de Pagamento", resumo: "Estabelece os valores a serem pagos e as datas de vencimento.", texto: "A remuneração total será de R$ 50.000,00 (cinquenta mil reais), pagável em 5 (cinco) parcelas iguais e consecutivas de R$ 10.000,00, com vencimento no 5º dia útil de cada mês."},
+            { id: 3, titulo: "Cláusula Terceira: Da Vigência e Rescisão", resumo: "Determina o prazo do contrato e as condições para seu encerramento.", texto: "Este contrato terá vigência de 12 (doze) meses, a partir da data de sua assinatura. Poderá ser rescindido por qualquer das partes, mediante aviso prévio de 30 (trinta) dias, sem prejuízo das obrigações pendentes."},
+            { id: 4, titulo: "Cláusula Quarta: Da Confidencialidade", resumo: "Obriga as partes a manterem sigilo sobre informações trocadas.", texto: "As partes se comprometem a manter o mais absoluto sigilo sobre quaisquer informações confidenciais, técnicas, comerciais ou operacionais obtidas em razão deste contrato, sob pena de responsabilidade civil e criminal."},
+        ];
+
+        /**
+         * Gera o HTML para uma única cláusula.
+         * @param {object} clausula - O objeto da cláusula.
+         * @returns {string} O HTML gerado.
+         */
+        function createClausulaHTML(clausula) {
+            return `
+                <div id="clausula-${clausula.id}" class="clausula-card bg-white p-5 rounded-xl shadow-md border-t-4 border-primary hover:border-secondary" onclick="toggleClausula(${clausula.id})">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-800">${clausula.titulo}</h2>
+                            <p class="text-sm text-gray-500 mt-1">${clausula.resumo}</p>
+                        </div>
+                        <svg id="icon-${clausula.id}" class="w-6 h-6 text-primary transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                    
+                    <!-- Conteúdo completo que será expandido -->
+                    <div id="content-${clausula.id}" class="clausula-content mt-4 border-t pt-4 border-gray-100">
+                        <p class="text-gray-700 whitespace-pre-wrap">${clausula.texto}</p>
+                        <div class="mt-4 flex space-x-2">
+                            <button onclick="copyClausulaText(event, ${clausula.id})" class="bg-secondary text-gray-800 text-sm font-medium py-1 px-3 rounded-full hover:bg-yellow-400 transition">
+                                Copiar Texto
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        /**
+         * Renderiza todas as cláusulas no container.
+         */
+        function renderClausulas() {
+            const container = document.getElementById('clausulas-container');
+            if (container) {
+                container.innerHTML = clausulasData.map(createClausulaHTML).join('');
+            }
+        }
+
+        /**
+         * Alterna a visibilidade do texto completo da cláusula.
+         * @param {number} id - ID da cláusula.
+         */
+        function toggleClausula(id) {
+            const content = document.getElementById(`content-${id}`);
+            const icon = document.getElementById(`icon-${id}`);
+            if (content && icon) {
+                const isExpanded = content.classList.contains('expanded');
+                
+                // Alterna a classe de expansão
+                content.classList.toggle('expanded');
+                
+                // Alterna a rotação do ícone
+                if (isExpanded) {
+                    icon.style.transform = 'rotate(0deg)';
+                } else {
+                    icon.style.transform = 'rotate(180deg)';
+                }
+            }
+        }
+
+        /**
+         * Copia o texto da cláusula para a área de transferência.
+         * @param {Event} event - O evento de clique para parar a propagação.
+         * @param {number} id - ID da cláusula.
+         */
+        function copyClausulaText(event, id) {
+            // Impede que o clique no botão ative o toggle da cláusula pai
+            event.stopPropagation(); 
+            
+            const clausula = clausulasData.find(c => c.id === id);
+            if (!clausula) return;
+
+            // Usa document.execCommand('copy') como fallback para ambientes restritos
+            const el = document.createElement('textarea');
+            el.value = clausula.texto;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+
+            showMessageBox("Texto da cláusula copiado!");
+        }
+
+        /**
+         * Exibe uma caixa de mensagem temporária.
+         * @param {string} message - A mensagem a ser exibida.
+         */
+        function showMessageBox(message) {
+            const box = document.getElementById('message-box');
+            if (box) {
+                box.textContent = message;
+                box.classList.remove('hidden', 'opacity-0');
+                box.classList.add('opacity-100');
+                
+                setTimeout(() => {
+                    box.classList.remove('opacity-100');
+                    box.classList.add('opacity-0');
+                    setTimeout(() => box.classList.add('hidden'), 300);
+                }, 2000);
+            }
+        }
+
+        // Inicializa a renderização das cláusulas ao carregar a página
+        window.onload = renderClausulas;
+        
+    </script>
+</body>
+</html>

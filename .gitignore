@@ -1,0 +1,13 @@
+# Ambiente virtual
+venv/
+
+# Cache do Python
+__pycache__/
+*.pyc
+
+# Banco de dados local
+database.db
+instance/
+
+# Cache de testes
+.pytest_cache/
